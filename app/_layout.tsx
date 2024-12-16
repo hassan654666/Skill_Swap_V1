@@ -5,8 +5,13 @@ import { Stack } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
 import { useEffect } from 'react';
 import 'react-native-reanimated';
+import * as Linking from 'expo-linking';
+import { supabase } from '@/lib/supabase';
+import { useNavigation } from 'expo-router';
 
 import { useColorScheme } from '@/components/useColorScheme';
+
+
 
 export {
   // Catch any errors thrown by the Layout component.
@@ -34,7 +39,7 @@ export default function RootLayout() {
 
   useEffect(() => {
     if (loaded) {
-      SplashScreen.hideAsync();
+      SplashScreen.hideAsync().catch(console.warn);
     }
   }, [loaded]);
 
@@ -47,10 +52,47 @@ export default function RootLayout() {
 
 function RootLayoutNav() {
   const colorScheme = useColorScheme();
+  const navigation = useNavigation(); // Correct usage of useNavigation
+  const linking = {
+    prefixes: ['skillswap://'],
+    config: {
+      screens: {
+        '(tabs)': {
+          screens: {
+            Home: 'Home',
+            LoginPage: 'LoginPage',
+            Signup: 'Signup',
+            ForgotPassword: 'ForgotPassword',
+            ResetPassword: 'ResetPassword',
+          },
+        },
+        modal: 'modal',
+      },
+    },
+  };
+
+  useEffect(() => {
+    const handleDeepLink = async (event: Linking.EventType) => {
+      const { url } = event;
+      if (url?.startsWith('skillswap://Home')) {
+        const { data, error } = await supabase.auth.getSession();
+        if (error) {
+          console.error('Failed to retrieve session:', error.message);
+          return;
+        }
+        console.log('Session retrieved:', data.session);
+        navigation.navigate('Home');// Redirect to your home screen logic here
+      }
+    };
+
+    Linking.addEventListener('url', handleDeepLink);
+
+    return () => Linking.removeEventListener('url', handleDeepLink);
+  }, []);
 
   return (
     <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
-      <Stack>
+      <Stack linking={linking}>
         <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
         <Stack.Screen name="modal" options={{ presentation: 'modal' }} />
       </Stack>
