@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert, Image } from 'react-native';
 import { supabase } from '@/lib/supabase';
 import { useNavigation } from 'expo-router';
@@ -10,15 +10,26 @@ const LoginPage: React.FC = () => {
   const [password, setPassword] = useState('');
   const navigation = useNavigation(); // Correct usage of useNavigation
 
+  useEffect(() => {
+
+    const checkSession = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      navigation.navigate(session ? 'Home' : 'LoginPage');
+      console.log(supabase.auth.getSession())
+    };
+
+    checkSession();
+  }, [email]);
+
   const handleLogin = async () => {
-    // try {
-    //   const { error } = await supabase.auth.signInWithPassword({ email, password });
-    //   if (error) throw error;
-    //   Alert.alert('Success', 'You are logged in!');
+    try {
+      const { error } = await supabase.auth.signInWithPassword({ email, password });
+      if (error) throw error;
+      Alert.alert('Success', 'You are logged in!');
       navigation.navigate('Home');
-    // } catch (error: any) {
-    //   Alert.alert('Error', error.message);
-    // }
+    } catch (error: any) {
+      Alert.alert('Error', error.message);
+    }
   };
 
   // const handleGoogleLogin = async () => {

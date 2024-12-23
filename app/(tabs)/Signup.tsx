@@ -9,16 +9,20 @@ const SignupPage: React.FC = () => {
   const [password, setPassword] = useState('');
 
   const handleSignup = async () => {
-    try {
-      const { data, error: signUpError } = await supabase.auth.signUp({
-        email,
-        password,
-        options: {
-          emailRedirectTo: 'skillswap://Home',
-        },
-      });  
-      if (signUpError) throw signUpError;  
-      Alert.alert('Success', 'Account created! Please check your email for confirmation.');
+    // try {
+    //   const { data, error: signUpError } = await supabase.auth.signUp({
+    //     email,
+    //     password,
+    //     options: {
+    //       data: {
+    //         full_name: name,
+    //         username: username,
+    //       },
+    //       emailRedirectTo: 'skillswap://Home',
+    //     },
+    //   });  
+    //   if (signUpError) throw signUpError;  
+    //   Alert.alert('Success', 'Account created! Please check your email for confirmation.');
       try {
         const { data: insertData, error: insertError } = await supabase.from('Test').upsert({
           name: name,
@@ -30,9 +34,9 @@ const SignupPage: React.FC = () => {
       } catch (insertError: any) {
         Alert.alert('Error', insertError.message);
       }
-    } catch (error: any) {
-      Alert.alert('Error', error.message);
-    }
+    // } catch (error: any) {
+    //   Alert.alert('Error', error.message);
+    // }
   };
   
   

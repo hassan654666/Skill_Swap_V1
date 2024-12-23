@@ -11,8 +11,6 @@ import { useNavigation } from 'expo-router';
 
 import { useColorScheme } from '@/components/useColorScheme';
 
-
-
 export {
   // Catch any errors thrown by the Layout component.
   ErrorBoundary,
@@ -64,6 +62,8 @@ function RootLayoutNav() {
             Signup: 'Signup',
             ForgotPassword: 'ForgotPassword',
             ResetPassword: 'ResetPassword',
+            SkillSwap: 'SkillSwap',
+            Schedule: 'Schedule',
           },
         },
         modal: 'modal',
@@ -71,24 +71,24 @@ function RootLayoutNav() {
     },
   };
 
-  useEffect(() => {
-    const handleDeepLink = async (event: Linking.EventType) => {
-      const { url } = event;
-      if (url?.startsWith('skillswap://Home')) {
-        const { data, error } = await supabase.auth.getSession();
-        if (error) {
-          console.error('Failed to retrieve session:', error.message);
-          return;
-        }
-        console.log('Session retrieved:', data.session);
-        navigation.navigate('Home');// Redirect to your home screen logic here
-      }
-    };
+  // useEffect(() => {
+  //   const handleDeepLink = async (event: Linking.EventType) => {
+  //     const { url } = event;
+  //     if (url?.startsWith('skillswap://Home')) {
+  //       const { data, error } = await supabase.auth.getSession();
+  //       if (error) {
+  //         console.error('Failed to retrieve session:', error.message);
+  //         return;
+  //       }
+  //       console.log('Session retrieved:', data.session);
+  //       navigation.navigate('Home');// Redirect to your home screen logic here
+  //     }
+  //   };
 
-    Linking.addEventListener('url', handleDeepLink);
+  //   Linking.addEventListener('url', handleDeepLink);
 
-    return () => Linking.removeEventListener('url', handleDeepLink);
-  }, []);
+  //   return () => Linking.removeEventListener('url', handleDeepLink);
+  // }, []);
 
   return (
     <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
