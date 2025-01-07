@@ -1,57 +1,89 @@
 import { Text, View, StyleSheet, TouchableOpacity } from 'react-native';
 import { useNavigation } from 'expo-router';
-import React, { useEffect, useState } from 'react';
-import { supabase } from '@/lib/supabase';
-import { useIsFocused } from '@react-navigation/native';
+import { useEffect, useState } from 'react';
+import { useUserContext } from '@/components/UserContext';
+//import { supabase } from '@/lib/supabase';
+//import { useIsFocused } from '@react-navigation/native';
 
 export default function Schedule() {
-    const [userdata, setUserData] = useState<any>();
-    const [thisuser, setThisUser] = useState<any>();
+    //const [userdata, setUserData] = useState<any>();
+    //const [thisuser, setThisUser] = useState<any>();
+    //const [sessionChecked, setSessionChecked] = useState(false);
     const navigation = useNavigation<any>();
-    const isFocused = useIsFocused();
+    //const isFocused = useIsFocused();
 
-    const checkSession = async () => {
-      const {data: {session}} = await supabase.auth.getSession();
-      console.log('session at Schedule: ')
-      console.log(session)
-      if(!session){
-        navigation.navigate('LoginPage', {screen: 'Login'});
-        return;
+    //const { session, thisUser, usersData, userData, fetchSessionAndUserData } = useUserContext();
+    const { session } = useUserContext();
+          
+    useEffect(() => {
+      if (!session) {
+        if (navigation.getState().routes[0]?.name !== 'LoginPage') {
+          navigation.navigate('LoginPage', { screen: 'Login' });
+        }
       }
-      const { data: {user}} = await supabase.auth.getUser();
-      if(user){
-        setThisUser(user);
-        fetchUserProfile(user.id);
-      }
-    };
+    }, [session]);
+    
+    //     const checkSession = async () => {
+    //           const {data: {session}} = await supabase.auth.getSession();
+    //           console.log('session at Schedule: ')
+    //           console.log(session)
+              
+    //           if(!session && navigation.getState().routes[0]?.name !== 'LoginPage'){
+    //             setSessionChecked(false)
+    //             navigation.navigate('LoginPage', {screen: 'Login'});
+    //             return;
+    //           } else{
+    //             setSessionChecked(true)
+    //           }
+    //         };
+        
+    //       const getUser = async () => {
+    //         const { data: {user}} = await supabase.auth.getUser();
+    //         if(user){
+    //           setThisUser(user);
+    //           fetchUserProfile(user.id);
+    //         }
+    //       };
+        
+    //       useEffect(() => {
+    //         if(isFocused){
+    //           checkSession();
+    //         }
+    //       }, [isFocused]);
+        
+    //       useEffect(() => {
+    //         if(sessionChecked && ! userdata){
+    //           getUser();
+    //         }
+    //       }, [sessionChecked]);
 
-    const fetchUserProfile = async (userId: any) => {
-      try {
-        if (userId) {
+    // const fetchUserProfile = async (userId: any) => {
+    //   try {
+    //     if (userId) {
             
-        const { data, error } = await supabase
-          .from('profiles')
-          .select('id, authid, name, username, email, skillsOffered, skillsRequired, avatar_url, description')
-          .eq('authid', userId)
-          .single();
+    //     const { data, error } = await supabase
+    //       .from('profiles')
+    //       .select('id, authid, name, username, email, skillsOffered, skillsRequired, avatar_url, description')
+    //       .eq('authid', userId)
+    //       .single();
     
-        if (error) throw error;
-        setUserData(data);
-        return data;
-      } else {
-          console.log('No user session found');
-      }
-      } catch (error: any) {
-        console.error('Error fetching profile:', error.message);
-        return null;
-      }
-    };
+    //     if (error) throw error;
+    //     setUserData(data);
+    //     return data;
+    //   } else {
+    //       console.log('No user session found');
+    //   }
+    //   } catch (error: any) {
+    //     console.error('Error fetching profile:', error.message);
+    //     return null;
+    //   }
+    // };
     
-    useEffect(() => {  
-      if(isFocused){  
-        checkSession();
-      }
-    }, [isFocused]);
+    // // useEffect(() => {  
+    // //   if(isFocused){  
+    // //     checkSession();
+    // //   }
+    // // }, [isFocused]);
 
     return (
       <View style= {styles.container}>
@@ -60,7 +92,7 @@ export default function Schedule() {
                     <TouchableOpacity style ={styles.button} onPress={() => navigation.navigate('Home')}>
                       <Text style={styles.buttonText}>Home</Text>
                     </TouchableOpacity>
-                    <TouchableOpacity style ={styles.button} onPress={() => navigation.navigate('SkillSwap')}>
+                    <TouchableOpacity style ={styles.button} onPress={() => navigation.navigate('Skill Swap')}>
                       <Text style={styles.buttonText}>Skill Swap</Text>
                     </TouchableOpacity>
                     <TouchableOpacity style ={styles.button} onPress={() => navigation.navigate('Schedule')}>

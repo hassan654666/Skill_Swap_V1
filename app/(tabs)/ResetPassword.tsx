@@ -1,50 +1,61 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
+import { useUserContext } from '@/components/UserContext';
 import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert, Image } from 'react-native';
 import { supabase } from '@/lib/supabase';
 import { useNavigation } from 'expo-router';
 import { BackHandler } from 'react-native';
-import { useIsFocused } from '@react-navigation/native';
-import * as webBrowser from 'expo-web-browser'
 
 export default function ResetPassword() {
-  const [userdata, setUserData] = useState<any>();
-  const [thisuser, setThisUser] = useState<any>();
+  const [email, setEmail] = useState<any>();
+  const [password, setPassword] = useState('');
   const [newPassword, setNewPassword] = useState('');
-  const [confirm, setConfirm] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
   const navigation = useNavigation<any>(); 
-  const isfocused = useIsFocused();
 
-  const checkSession = async () => {
-    const {data: {session}} = await supabase.auth.getSession();
-    console.log('session at Edit Profile: ')
-    console.log(session)
-    if(!session){
-      navigation.navigate('LoginPage', {screen: 'Login'});
-      return;
+  //const { session, thisUser, usersData, userData, fetchSessionAndUserData } = useUserContext();
+  const { session, thisUser, userData } = useUserContext();
+    
+  useEffect(() => {
+    if (!session) {
+      if (navigation.getState().routes[0]?.name !== 'LoginPage') {
+        navigation.navigate('LoginPage', { screen: 'Login' });
+      }
     }
-    const { data: {user}} = await supabase.auth.getUser();
-    if(user){
-      setThisUser(user);
-      fetchUserProfile(user.id);
-    }
-  };
+    setEmail(thisUser?.email);
+  }, [session]);
 
   useEffect(() => {
-    if(isfocused){
-      checkSession();
-    }
-  }, [isfocused]);
+      const backAction = () => {
+        navigation.navigate('Edit Profile'); // Navigate to a specific screen
+        return true; // Prevent default back action
+      };
+  
+      const backHandler = BackHandler.addEventListener('hardwareBackPress', backAction);
+  
+      return () => backHandler.remove(); // Cleanup
+    }, [navigation]);
 
   const changePassword = async () => {
     if(newPassword != ''){
-      if(newPassword === confirm){
+      if(newPassword === confirmPassword){
         try {
-          const { error } = await supabase.auth.updateUser({ password: newPassword });
-          if (error) throw error;
+          const { error: updateError } = await supabase.auth.updateUser({ password: newPassword });
+          if (updateError) throw updateError;
           Alert.alert('Success', 'Password has been reset!');
-          navigation.navigate('Home', {screen: 'Home'});
-        } catch (error: any) {
-          Alert.alert('Error', error.message);
+          try {
+            setPassword(newPassword);
+            const { error: signInError } = await supabase.auth.signInWithPassword({ email, password });
+            if (signInError) throw signInError;
+            //Alert.alert('Success', 'You are logged in!');
+            navigation.navigate('Home', {screen: 'Home'});
+          } catch (signInError: any) {
+            Alert.alert('Error', signInError.message);
+          }
+          //navigation.navigate('Home', {screen: 'Home'});
+        } catch (updateError: any) {
+          Alert.alert('Error', updateError.message);
+        } finally {
+          
         }
       } else{
         Alert.alert('Error', 'Password was not confirmed!');
@@ -54,46 +65,13 @@ export default function ResetPassword() {
     }
   };
 
-  const fetchUserProfile = async (userId: any) => {
-      try {
-        if (userId) {
-            
-        const { data, error } = await supabase
-          .from('profiles')
-          .select('id, authid, name, username, email, description, skillsOffered, skillsRequired, avatar_url')
-          .eq('authid', userId)
-          .single();
-    
-        if (error) throw error;
-        setUserData(data);
-        return data;
-      } else {
-          console.log('No user session found');
-      }
-      } catch (error: any) {
-        console.error('Error fetching profile:', error.message);
-        return null;
-      }
-    };
-
-    useEffect(() => {
-        const backAction = () => {
-          navigation.navigate('Edit Profile'); // Navigate to a specific screen
-          return true; // Prevent default back action
-        };
-    
-        const backHandler = BackHandler.addEventListener('hardwareBackPress', backAction);
-    
-        return () => backHandler.remove(); // Cleanup
-      }, [navigation]);
-
   return (
     <View style={styles.container}>
       <Text style={styles.title}>Reset Password</Text>
-      <Image source={userdata?.avatar_url? {uri: userdata?.avatar_url } : require('../Avatar.png')} style={styles.logo} />
+      <Image source={userData?.avatar_url? {uri: userData?.avatar_url } : require('../Avatar.png')} style={styles.logo} />
       <View style = {styles.content}>
-        <Text style= {styles.name}>{userdata?.name}</Text>
-        <Text style= {styles.userName}>@{userdata?.username}</Text>
+        <Text style= {styles.name}>{userData?.name}</Text>
+        <Text style= {styles.userName}>@{userData?.username}</Text>
       </View>
       <TextInput
         style={styles.input}
@@ -106,8 +84,8 @@ export default function ResetPassword() {
       <TextInput
         style={styles.input}
         placeholder="Confirm Password"
-        value={confirm}
-        onChangeText={setConfirm}
+        value={confirmPassword}
+        onChangeText={setConfirmPassword}
         secureTextEntry
       />
 

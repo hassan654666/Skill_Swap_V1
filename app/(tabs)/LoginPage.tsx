@@ -1,40 +1,34 @@
 import React, { useState, useEffect } from 'react';
+import { useUserContext } from '@/components/UserContext';
 import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert, Image } from 'react-native';
 import { supabase } from '@/lib/supabase';
 import { useNavigation } from 'expo-router';
-import { useIsFocused } from '@react-navigation/native';
-//import { useNavigation } from '@react-navigation/native';
-import * as webBrowser from 'expo-web-browser'
+//import { useIsFocused } from '@react-navigation/native';
+//import * as webBrowser from 'expo-web-browser'
 
 const LoginPage: React.FC = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const navigation = useNavigation<any>(); // Correct usage of useNavigation
-  const isfocused = useIsFocused();
+  //const isfocused = useIsFocused();
 
+  //const { session, thisUser, usersData, userData, fetchSessionAndUserData } = useUserContext();
+  const { session } = useUserContext();
+    
   useEffect(() => {
-
-    const checkSession = async () => {
-      const { data: { session }} = await supabase.auth.getSession();
-      if (session) {
-        navigation.navigate('Home', { screen: 'Home' });
-      } else {
-        navigation.navigate('LoginPage', { screen: 'Login' });
-      }      
-      //navigation.navigate(session ? 'Home', {screen: 'Home'} : 'LoginPage', {screen: 'Login'});
-      console.log(session)
-    };
-    if(isfocused){
-      checkSession();
+    if (session) {
+      if (navigation.getState().routes[0]?.name !== 'HomePage') {
+        navigation.navigate('HomePage', { screen: 'Home' });
+      }
     }
-  }, [isfocused]);
+  }, [session]);
 
   const handleLogin = async () => {
     try {
       const { error } = await supabase.auth.signInWithPassword({ email, password });
       if (error) throw error;
       Alert.alert('Success', 'You are logged in!');
-      navigation.navigate('Home', {screen: 'Home'});
+      navigation.navigate('HomePage', {screen: 'Home'});
     } catch (error: any) {
       Alert.alert('Error', error.message);
     }

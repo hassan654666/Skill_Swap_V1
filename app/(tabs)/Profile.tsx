@@ -1,85 +1,56 @@
 import React, { useEffect, useState } from 'react';
+import { useUserContext } from '@/components/UserContext';
 import { View, Text, Image, Button, ScrollView, Alert, StyleSheet, TextInput, useColorScheme, TouchableOpacity, FlatList } from 'react-native';
-import AsyncStorage from '@react-native-async-storage/async-storage';
+//import AsyncStorage from '@react-native-async-storage/async-storage';
 import { supabase } from '@/lib/supabase';
 //import { Picker } from '@react-native-picker/picker';
 //import CheckBox from 'expo-checkbox';
-import { useIsFocused } from '@react-navigation/native';
+//import { useIsFocused } from '@react-navigation/native';
 import { useNavigation } from 'expo-router';
 import { BackHandler } from 'react-native';
-import * as ImagePicker from 'expo-image-picker';
-import { Avatar } from '@rneui/themed';
-import { BackgroundImage } from '@rneui/themed/dist/config';
+//import * as ImagePicker from 'expo-image-picker';
+//import { Avatar } from '@rneui/themed';
+//import { BackgroundImage } from '@rneui/themed/dist/config';
 
 export default function Profile(){
 
-    const [selectedImage, setSelectedImage] = useState<any>();
-    const [uploading, setUploading] = useState(false);
-    const [avatarURL, setAvatarURL] = useState<any>();
-    const [userdata, setUserData] = useState<any>();
-    const [thisuser, setThisUser] = useState<any>();
+    //const [selectedImage, setSelectedImage] = useState<any>();
+    //const [uploading, setUploading] = useState(false);
+    //const [avatarURL, setAvatarURL] = useState<any>();
+    //const [userdata, setUserData] = useState<any>();
+    //const [sessionChecked, setSessionChecked] = useState(false);
+    //const [thisuser, setThisUser] = useState<any>();
     const navigation = useNavigation<any>();
-    const isFocused = useIsFocused();
+    //const isFocused = useIsFocused();
     
+    //const { session, thisUser, usersData, userData, fetchSessionAndUserData } = useUserContext();
+    const { session, userData } = useUserContext();
 
-    const checkSession = async () => {
-        const {data: {session}} = await supabase.auth.getSession();
-        console.log('session at Profile: ')
-        console.log(session)
-        if(!session){
-          navigation.navigate('LoginPage', {screen: 'Login'});
-          return;
+    useEffect(() => {
+      if (!session) {
+        if (navigation.getState().routes[0]?.name !== 'LoginPage') {
+          navigation.navigate('LoginPage', { screen: 'Login' });
         }
-        const { data: {user}} = await supabase.auth.getUser();
-        if(user){
-          setThisUser(user);
-          fetchUserProfile(user.id);
-        }
-      };
+      }
+    }, [session]);
 
     const handleLogout = async () => {
-        try {
-          const { error } = await supabase.auth.signOut();
-          if (error) throw error;
-    
-          Alert.alert('Success', 'You have been logged out.');
-            navigation.navigate('LoginPage', {screen: 'Login'});
-        } catch (error: any) {
-          Alert.alert('Error', error.message);
-        }
-      };
-
-      function editProfile() {
-        navigation.navigate('Edit Profile');
-      }
-
-    const fetchUserProfile = async (userId: any) => {
       try {
-        if (userId) {
-            
-        const { data, error } = await supabase
-          .from('profiles')
-          .select('id, authid, name, username, email, skillsOffered, skillsRequired, avatar_url, description')
-          .eq('authid', userId)
-          .single();
-    
+        const { error } = await supabase.auth.signOut();
         if (error) throw error;
-        setUserData(data);
-        return data;
-      } else {
-          console.log('No user session found');
-      }
+  
+        Alert.alert('Success', 'You have been logged out.');
+          navigation.navigate('LoginPage', {screen: 'Login'});
+          //setSessionChecked(false);
       } catch (error: any) {
-        console.error('Error fetching profile:', error.message);
-        return null;
+        Alert.alert('Error', error.message);
       }
     };
 
-  useEffect(() => {  
-    if(isFocused){  
-      checkSession();
+    function editProfile() {
+      navigation.navigate('Edit Profile');
+      //setSessionChecked(false);
     }
-  }, [isFocused]);
 
   useEffect(() => {
     const backAction = () => {
@@ -92,25 +63,22 @@ export default function Profile(){
     return () => backHandler.remove(); // Cleanup
   }, [navigation]);
   
+  console.log('Profile rendered');
 
       return(
         <View style= {styles.container}>
-            {/* <Text style= {styles.title}>Profile</Text> */}
-            <Image source= {userdata?.avatar_url? {uri: userdata?.avatar_url } : require('../Avatar.png')} style= {[styles.logo, {marginTop: 10,}]}></Image>
+            <Image source= {userData?.avatar_url? {uri: userData?.avatar_url } : require('../Avatar.png')} style= {[styles.logo, {marginTop: 10,}]}></Image>
             <View style = {styles.content}>
-              <Text style= {styles.title}>Name: {userdata?.name}</Text>
-              <Text style= {styles.title}>Username: @{userdata?.username}</Text>
-              <Text style= {styles.title}>Email: {userdata?.email}</Text>
-              <Text style= {styles.title}>Description: {userdata?.description}</Text>
-              <Text style= {styles.title}>Skills Offered: {userdata?.skillsOffered}</Text>
-              <Text style= {styles.title}>Skills Required: {userdata?.skillsRequired}</Text>
+              <Text style= {styles.title}>Name: {userData?.name}</Text>
+              <Text style= {styles.title}>Username: @{userData?.username}</Text>
+              <Text style= {styles.title}>Email: {userData?.email}</Text>
+              <Text style= {styles.title}>Description: {userData?.description}</Text>
+              <Text style= {styles.title}>Skills Offered: {userData?.skillsOffered}</Text>
+              <Text style= {styles.title}>Skills Required: {userData?.skillsRequired}</Text>
             </View>
             <TouchableOpacity style={styles.button} onPress={editProfile}>
                 <Text style={styles.buttonText}>Edit profile</Text>
             </TouchableOpacity>
-            {/* <TouchableOpacity style={styles.button} onPress={uploadImage}>
-                <Text style={styles.buttonText}>Save</Text>
-            </TouchableOpacity> */}
             <TouchableOpacity style={[styles.button, {backgroundColor: 'red',}]} onPress={handleLogout}>
                 <Text style={styles.buttonText}>Log Out</Text>
             </TouchableOpacity>

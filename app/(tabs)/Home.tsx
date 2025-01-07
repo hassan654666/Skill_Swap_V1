@@ -1,86 +1,49 @@
 import React, { useEffect, useState } from 'react';
+import { useUserContext } from '@/components/UserContext';
 import { View, Text, Image, Button, ScrollView, Alert, StyleSheet, TextInput, useColorScheme, TouchableOpacity, FlatList } from 'react-native';
-import AsyncStorage from '@react-native-async-storage/async-storage';
-import { supabase } from '@/lib/supabase';
+//import AsyncStorage from '@react-native-async-storage/async-storage';
+//import { supabase } from '@/lib/supabase';
 //import { Picker } from '@react-native-picker/picker';
 //import CheckBox from 'expo-checkbox';
-import { useIsFocused } from '@react-navigation/native';
+//import { useIsFocused } from '@react-navigation/native';
 import { useNavigation } from 'expo-router';
-import { Avatar, Icon } from '@rneui/themed';
-import FontAwesome from '@expo/vector-icons/FontAwesome';
+//import { Avatar, Icon } from '@rneui/themed';
+//import FontAwesome from '@expo/vector-icons/FontAwesome';
 
 export default function Home() {
 
-  const [usersData, setUsersData] = useState<any>([]);
-  const [loggedUser, setLoggedUser] = useState<any>();
-  const [userdata, setUserData] = useState<any>();
+  //const [usersData, setUsersData] = useState<any>([]);
+  //const [ThisUser, setThisUser] = useState<any>();
+  //const [userdata, setUserData] = useState<any>();
   const [searchText, setSearchText] = useState<string>('');
+  //const [sessionChecked, setSessionChecked] = useState(false);
   const navigation = useNavigation<any>();
-  const isFocused = useIsFocused();
-  //var session;
+  //const isFocused = useIsFocused();
+  //var count = 0;
 
-  
+  //const { session, thisUser, usersData, userData, fetchSessionAndUserData } = useUserContext();
+  const { session, usersData, userData } = useUserContext();
 
-    const checkSession = async () => {
-      const {data: {session}} = await supabase.auth.getSession();
-      console.log('session at Home: ')
-      console.log(session)
-      if(!session){
-        navigation.navigate('LoginPage', {screen: 'Login'});
-        return;
+  // useEffect(() => {
+  //   fetchSessionAndUserData(); // Trigger data fetching when the screen is visited
+  // }, []);
+
+  useEffect(() => {
+    if (!session) {
+      if (navigation.getState().routes[0]?.name !== 'LoginPage') {
+        navigation.navigate('LoginPage', { screen: 'Login' });
       }
-      const { data: {user}} = await supabase.auth.getUser();
-      if(user){
-        setLoggedUser(user);
-        fetchUserProfile(user.id);
-            
-        const {data, error} = await supabase
-        .from('profiles')
-        .select('id, name, email, skillsOffered, avatar_url')
-        .neq('authid', user.id);
-
-        if (error) {
-          console.error('Error fetching users:', error.message);
-        } else {
-          setUsersData(data);
-        }
-      }
-    };
-
-      const fetchUserProfile = async (userId: any) => {
-        try {
-          if (userId) {
-              
-          const { data, error } = await supabase
-            .from('profiles')
-            .select('id, authid, name, username, email, skillsOffered, skillsRequired, avatar_url')
-            .eq('authid', userId)
-            .single();
-      
-          if (error) throw error;
-          setUserData(data);
-          return data;
-        } else {
-            console.log('No user session found');
-        }
-        } catch (error: any) {
-          console.error('Error fetching profile:', error.message);
-          return null;
-        }
-      };
-
-    useEffect(() => {
-      if(isFocused){
-        checkSession();
-        //fetchUserProfile(loggedUser?.id);
-      }
-  }, [isFocused]);
-
- //const usersDataname = usersData?.name;
+    }
+  }, [session]);
 
   const searchData = usersData.filter((users: any) =>
     users.name.toLowerCase().includes(searchText.toLowerCase()) || users.skillsOffered.toLowerCase().includes(searchText.toLowerCase())
   );
+
+  function goToProfile(){
+    //setSessionChecked(false);
+    navigation.navigate('Profile');
+  }
 
   const renderItem = ({ item }: any) => (
     <TouchableOpacity
@@ -100,13 +63,15 @@ export default function Home() {
     </TouchableOpacity>
   );
 
+  console.log('Home rendered');
+
     return (
       <View style={styles.container}>
         <View style= {styles.topbar}>
           <Image source= {require('../logo.png')} style= {[styles.logo, {marginTop: 10,}]}></Image>
-          <TouchableOpacity style= { [styles.avatar, {margin: 25, marginTop: 25,}] } onPress={() => navigation.navigate('Profile')}>
-            <Image source= {userdata?.avatar_url? { uri: userdata?.avatar_url } : require('../Avatar.png')} style= { styles.avatar} resizeMode='cover'></Image>
-            <Text style= {styles.username}>{userdata?.name}</Text>
+          <TouchableOpacity style= { [styles.avatar, {margin: 25, marginTop: 25,}] } onPress={goToProfile}>
+            <Image source= {userData?.avatar_url? { uri: userData?.avatar_url } : require('../Avatar.png')} style= { styles.avatar} resizeMode='cover'></Image>
+            <Text style= {styles.username}>{userData?.name}</Text>
           </TouchableOpacity>
         </View>
         <View style= {styles.inputArea}>

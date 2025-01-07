@@ -50,7 +50,17 @@ const SignupPage: React.FC = () => {
         }
       } catch (error: any) {
         Alert.alert('Error', error.message);
-      }
+      } 
+      // finally {
+      //   try {
+      //         const { error } = await supabase.auth.signInWithPassword({ email, password });
+      //         if (error) throw error;
+      //         Alert.alert('Success', 'You are logged in!');
+      //         navigation.navigate('Home', {screen: 'Home'});
+      //       } catch (error: any) {
+      //         Alert.alert('Error', error.message);
+      //       }
+      // }
     }
   };
   
