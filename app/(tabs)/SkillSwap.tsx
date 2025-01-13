@@ -1,4 +1,4 @@
-import { Text, View, StyleSheet, TouchableOpacity } from 'react-native';
+import { Text, View, Image, StyleSheet, TouchableOpacity, useColorScheme } from 'react-native';
 import { useNavigation } from 'expo-router';
 import { useEffect, useState } from 'react';
 import { useUserContext } from '@/components/UserContext';
@@ -6,86 +6,24 @@ import { supabase } from '@/lib/supabase';
 import { useIsFocused } from '@react-navigation/native';
 
 export default function SkillSwap() {
-    //const [userdata, setUserData] = useState<any>();
-    //const [thisuser, setThisUser] = useState<any>();
     const [sessionChecked, setSessionChecked] = useState(false);
     const navigation = useNavigation<any>();
     const isFocused = useIsFocused();
-
-    const { session, thisUser, usersData, userData, fetchSessionAndUserData } = useUserContext();
+    const colorScheme = useColorScheme();
+    const DarkMode = colorScheme === 'dark';
+    const textColor = DarkMode ? '#fff' : '#000';
+    const backgroundColor = DarkMode ? '#626262' : '#C7C7C7';
+    const SecondaryBackgroundColor = DarkMode ? '#7F8487' : '#B2B2B2';
+    const TertiaryBackgroundColor = DarkMode ? '#929292' : '#E7E7E7';
+    const inputColor = DarkMode ? '#A7A7A7' : '#E7E7E7';
+    const buttonColor = DarkMode ? '#333' : '#007BFF';
+    const buttonTextColor = DarkMode ? '#fff' : '#fff';
       
-      useEffect(() => {
-        if (!session) {
-          if (navigation.getState().routes[0]?.name !== 'LoginPage') {
-            navigation.navigate('LoginPage', { screen: 'Login' });
-          }
-        }
-      }, [session]);
-    
-    //     const checkSession = async () => {
-    //           const {data: {session}} = await supabase.auth.getSession();
-    //           console.log('session at Skill Swap: ')
-    //           console.log(session)
-              
-    //           if(!session && navigation.getState().routes[0]?.name !== 'LoginPage'){
-    //             setSessionChecked(false)
-    //             navigation.navigate('LoginPage', {screen: 'Login'});
-    //             return;
-    //           } else{
-    //             setSessionChecked(true)
-    //           }
-    //         };
-        
-    //       const getUser = async () => {
-    //         const { data: {user}} = await supabase.auth.getUser();
-    //         if(user){
-    //           //setThisUser(user);
-    //           fetchUserProfile(user.id);
-    //         }
-    //       };
-        
-    //       useEffect(() => {
-    //         if(isFocused){
-    //           checkSession();
-    //         }
-    //       }, [isFocused]);
-        
-    //       useEffect(() => {
-    //         if(sessionChecked && ! userdata){
-    //           getUser();
-    //         }
-    //       }, [sessionChecked]);
-
-    // const fetchUserProfile = async (userId: any) => {
-    //   try {
-    //     if (userId) {
-            
-    //     const { data, error } = await supabase
-    //       .from('profiles')
-    //       .select('id, authid, name, username, email, skillsOffered, skillsRequired, avatar_url, description')
-    //       .eq('authid', userId)
-    //       .single();
-    
-    //     if (error) throw error;
-    //     setUserData(data);
-    //     return data;
-    //   } else {
-    //       console.log('No user session found');
-    //   }
-    //   } catch (error: any) {
-    //     console.error('Error fetching profile:', error.message);
-    //     return null;
-    //   }
-    // };
-    
-    // // useEffect(() => {  
-    // //   if(isFocused){  
-    // //     checkSession();
-    // //   }
-    // // }, [isFocused]);
+    console.log('Skill Swap rendered');
 
     return (
-      <View style= {styles.container}>
+      <View style= {[styles.container, {backgroundColor: backgroundColor}]}>
+        <Image source={require('../logo.png')} style={styles.logo} />
         <Text style= {styles.title}>Skill Swap</Text>
         <View style = {styles.navbar}>
           <TouchableOpacity style ={styles.button} onPress={() => navigation.navigate('Home')}>
@@ -107,8 +45,10 @@ export default function SkillSwap() {
       flex: 1,
       justifyContent: 'center',
       alignItems: 'center',
-      //padding: 16,
-      backgroundColor: '#f5f5f5',
+    },
+    logo: {
+      width: 500,
+      height: 500,
     },
     title: {
       fontSize: 24,
@@ -116,24 +56,19 @@ export default function SkillSwap() {
       marginBottom: 20,
     },
     navbar: {
-      position: 'absolute', // Make the navbar absolute
-      bottom: 0, // Stick it to the bottom
+      position: 'absolute', 
+      bottom: 0, 
       flex: 0.08,
       flexDirection: 'row',
       width: '100%',
-      //alignItems: 'center',
       gap: 10,
       backgroundColor: 'black',
-      // padding: 15,
-      // marginBottom: 10,
-      // marginTop: 10,
     },
     button: {
       width: '32%',
       padding: 20,
       borderRadius: 8,
       alignItems: 'center',
-      //backgroundColor: '#007BFF',
     },
     buttonText: {
       color: '#f5f5f5',

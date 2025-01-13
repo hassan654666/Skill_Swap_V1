@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, Image, Text, TextInput, TouchableOpacity, StyleSheet, Alert } from 'react-native';
+import { View, Image, Text, TextInput, TouchableOpacity, StyleSheet, Alert, useColorScheme } from 'react-native';
 import { supabase } from '@/lib/supabase';
 import { useNavigation } from 'expo-router';
 import { BackHandler } from 'react-native';
@@ -13,6 +13,15 @@ const SignupPage: React.FC = () => {
   const [skillsoffered, setSkillsOff] = useState('');
   const [skillsrequired, setSkillsReq] = useState('');
   const navigation = useNavigation<any>();
+  const colorScheme = useColorScheme();
+  const DarkMode = colorScheme === 'dark';
+  const textColor = DarkMode ? '#fff' : '#000';
+  const backgroundColor = DarkMode ? '#626262' : '#C7C7C7';
+  const SecondaryBackgroundColor = DarkMode ? '#7F8487' : '#B2B2B2';
+  const TertiaryBackgroundColor = DarkMode ? '#929292' : '#E7E7E7';
+  const inputColor = DarkMode ? '#A7A7A7' : '#E7E7E7';
+  const buttonColor = DarkMode ? '#333' : '#007BFF';
+  const buttonTextColor = DarkMode ? '#fff' : '#fff';
 
   const handleSignup = async () => {
     if(name === '' || username === '' || email === '' || password === ''){
@@ -44,58 +53,50 @@ const SignupPage: React.FC = () => {
           });
           if (insertError) throw insertError;
           console.log('User data saved:', insertData);
-          navigation.navigate('Home', {screen: 'Home'})      
+          navigation.navigate('LoginPage');    
         } catch (insertError: any) {
           Alert.alert('Error', insertError.message);
         }
       } catch (error: any) {
         Alert.alert('Error', error.message);
       } 
-      // finally {
-      //   try {
-      //         const { error } = await supabase.auth.signInWithPassword({ email, password });
-      //         if (error) throw error;
-      //         Alert.alert('Success', 'You are logged in!');
-      //         navigation.navigate('Home', {screen: 'Home'});
-      //       } catch (error: any) {
-      //         Alert.alert('Error', error.message);
-      //       }
-      // }
     }
   };
   
   useEffect(() => {
     const backAction = () => {
-      navigation.navigate('Login'); // Navigate to a specific screen
-      return true; // Prevent default back action
+      navigation.navigate('Login');
+      return true;
     };
 
     const backHandler = BackHandler.addEventListener('hardwareBackPress', backAction);
 
-    return () => backHandler.remove(); // Cleanup
+    return () => backHandler.remove();
   }, [navigation]);
 
+  console.log('Signup rendered');
+
   return (
-    <View style={styles.container}>
-      <Text style={styles.title}>Sign Up</Text>
+    <View style={[styles.container, {backgroundColor: backgroundColor}]}>
+      <Text style={[styles.title, {color: textColor}]}>Sign Up</Text>
       <Image source={require('../logo.png')} style={styles.logo} />
       <View style = {styles.fields}>
       <TextInput
-        style={styles.input}
+        style={[styles.input, {backgroundColor: inputColor}]}
         placeholder="Full Name *"
         value={name}
         onChangeText={setName}
         autoCapitalize="none"
       />
       <TextInput
-        style={styles.input}
+        style={[styles.input, {backgroundColor: inputColor}]}
         placeholder="Username *"
         value={username}
         onChangeText={setUserName}
         autoCapitalize="none"
       />
       <TextInput
-        style={styles.input}
+        style={[styles.input, {backgroundColor: inputColor}]}
         placeholder="Email *"
         value={email}
         onChangeText={setEmail}
@@ -103,29 +104,27 @@ const SignupPage: React.FC = () => {
         autoCapitalize="none"
       />
       <TextInput
-        style={styles.input}
+        style={[styles.input, {backgroundColor: inputColor}]}
         placeholder="Password *"
         value={password}
         onChangeText={setPassword}
         secureTextEntry
       />
       <TextInput
-        style={styles.input}
+        style={[styles.input, {backgroundColor: inputColor}]}
         placeholder="Skills Offered"
         value={skillsoffered}
         onChangeText={setSkillsOff}
-        //secureTextEntry
       />
       <TextInput
-        style={styles.input}
+        style={[styles.input, {backgroundColor: inputColor}]}
         placeholder="Skills Required"
         value={skillsrequired}
         onChangeText={setSkillsReq}
-        //secureTextEntry
       />
       </View>
-      <TouchableOpacity style={styles.button} onPress={handleSignup}>
-        <Text style={styles.buttonText}>Sign Up</Text>
+      <TouchableOpacity style={[styles.button, {backgroundColor: buttonColor}]} onPress={handleSignup}>
+        <Text style={[styles.buttonText, {color: buttonTextColor}]}>Sign Up</Text>
       </TouchableOpacity>
       <TouchableOpacity onPress={() => navigation.navigate('LoginPage', {screen: 'Login'})}>
         <Text style={styles.linkText}>Already have an account? Login</Text>
@@ -140,7 +139,6 @@ const styles = StyleSheet.create({
     justifyContent: 'center', 
     alignItems: 'center', 
     padding: 10, 
-    backgroundColor: '#FFFFFF' 
   },
   title: { 
     fontSize: 40, 
@@ -148,9 +146,7 @@ const styles = StyleSheet.create({
     marginBottom: 10 
   },
   fields: {
-    //flex: 0.8,
     width: '100%',
-    //padding: 10,
     marginVertical: 20,
     justifyContent: 'center',
     alignItems: 'center',
@@ -168,11 +164,9 @@ const styles = StyleSheet.create({
     padding: 10, 
     borderRadius: 8, 
     alignItems: 'center', 
-    backgroundColor: '#007BFF',
     marginTop: 10, 
   },
   buttonText: { 
-    color: '#fff', 
     fontWeight: 'bold' 
   },
   logo: {

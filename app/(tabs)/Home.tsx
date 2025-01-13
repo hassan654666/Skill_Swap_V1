@@ -1,53 +1,58 @@
 import React, { useEffect, useState } from 'react';
 import { useUserContext } from '@/components/UserContext';
 import { View, Text, Image, Button, ScrollView, Alert, StyleSheet, TextInput, useColorScheme, TouchableOpacity, FlatList } from 'react-native';
-//import AsyncStorage from '@react-native-async-storage/async-storage';
-//import { supabase } from '@/lib/supabase';
-//import { Picker } from '@react-native-picker/picker';
-//import CheckBox from 'expo-checkbox';
-//import { useIsFocused } from '@react-navigation/native';
 import { useNavigation } from 'expo-router';
-//import { Avatar, Icon } from '@rneui/themed';
-//import FontAwesome from '@expo/vector-icons/FontAwesome';
+import { useIsFocused } from '@react-navigation/native';
+import { darkColors } from '@rneui/themed';
 
 export default function Home() {
 
-  //const [usersData, setUsersData] = useState<any>([]);
-  //const [ThisUser, setThisUser] = useState<any>();
-  //const [userdata, setUserData] = useState<any>();
   const [searchText, setSearchText] = useState<string>('');
-  //const [sessionChecked, setSessionChecked] = useState(false);
   const navigation = useNavigation<any>();
-  //const isFocused = useIsFocused();
-  //var count = 0;
+  const isFocused = useIsFocused();
+  const colorScheme = useColorScheme();
+  const DarkMode = colorScheme === 'dark';
+  const textColor = DarkMode ? '#fff' : '#000';
+  const backgroundColor = DarkMode ? '#626262' : '#C7C7C7';
+  const SecondaryBackgroundColor = DarkMode ? '#7F8487' : '#B2B2B2';
+  const TertiaryBackgroundColor = DarkMode ? '#929292' : '#E7E7E7';
+  const inputColor = DarkMode ? '#A7A7A7' : '#E7E7E7';
+  const buttonColor = DarkMode ? '#333' : '#007BFF';
+  const buttonTextColor = DarkMode ? '#fff' : '#fff';
 
-  //const { session, thisUser, usersData, userData, fetchSessionAndUserData } = useUserContext();
-  const { session, usersData, userData } = useUserContext();
+  const { session, usersData, userData, fetchSessionAndUserData } = useUserContext();
 
-  // useEffect(() => {
-  //   fetchSessionAndUserData(); // Trigger data fetching when the screen is visited
-  // }, []);
-
-  useEffect(() => {
-    if (!session) {
-      if (navigation.getState().routes[0]?.name !== 'LoginPage') {
-        navigation.navigate('LoginPage', { screen: 'Login' });
+  const checkSession = async () => {
+    if(isFocused){
+      try {
+        if (!session) {
+          navigation.navigate('LoginPage', { screen: 'Login' });
+        }
+      } catch (error) {
+        console.error('Navigation Error:', error);
       }
     }
-  }, [session]);
+  };
+  
+  useEffect(() => {
+    checkSession();
+  }, [session, isFocused]);
+
+  useEffect(() => {
+    checkSession();
+  }, []);
 
   const searchData = usersData.filter((users: any) =>
     users.name.toLowerCase().includes(searchText.toLowerCase()) || users.skillsOffered.toLowerCase().includes(searchText.toLowerCase())
   );
 
   function goToProfile(){
-    //setSessionChecked(false);
     navigation.navigate('Profile');
   }
 
   const renderItem = ({ item }: any) => (
     <TouchableOpacity
-      style={styles.usersItem}
+      style={[styles.usersItem, {backgroundColor: TertiaryBackgroundColor}]}
       onPress={() =>
         navigation.navigate('Skill Swap', { userId: item.id, name: item.name })
       }
@@ -55,9 +60,9 @@ export default function Home() {
       <View style= {styles.users}>
         <Image source= {item.avatar_url? { uri: item.avatar_url } : require('../Avatar.png')} style= { styles.avatar} resizeMode='cover'></Image>
         <View>
-          <Text style={styles.usersName}>{item.name}</Text>
-          <Text style={styles.usersEmail}>{item.email}</Text>
-          <Text style={styles.usersSkills}>Skills Offered: {item.skillsOffered}</Text>
+          <Text style={[styles.usersName, {color: textColor}]}>{item.name}</Text>
+          <Text style={[styles.usersEmail, {color: textColor}]}>{item.email}</Text>
+          <Text style={[styles.usersSkills, {color: textColor}]}>Skills Offered: {item.skillsOffered}</Text>
         </View>
       </View>
     </TouchableOpacity>
@@ -67,46 +72,32 @@ export default function Home() {
 
     return (
       <View style={styles.container}>
-        <View style= {styles.topbar}>
+        <View style= {[styles.topbar, {backgroundColor: SecondaryBackgroundColor}]}>
           <Image source= {require('../logo.png')} style= {[styles.logo, {marginTop: 10,}]}></Image>
           <TouchableOpacity style= { [styles.avatar, {margin: 25, marginTop: 25,}] } onPress={goToProfile}>
             <Image source= {userData?.avatar_url? { uri: userData?.avatar_url } : require('../Avatar.png')} style= { styles.avatar} resizeMode='cover'></Image>
-            <Text style= {styles.username}>{userData?.name}</Text>
+            <Text style= {[styles.username, {color: textColor}]}>{userData?.name || 'Guest'}</Text>
           </TouchableOpacity>
         </View>
-        <View style= {styles.inputArea}>
+        <View style= {[styles.inputArea, { backgroundColor: SecondaryBackgroundColor}]}>
         <TextInput
-          style={styles.input}
+          style={[styles.input, {backgroundColor: inputColor}]}
           placeholder='Search...'
           value = {searchText}
           onChangeText={setSearchText}
         />
         </View>
-        <View style={styles.content}>
+        <View style={[styles.content, {backgroundColor: backgroundColor}]}>
           <FlatList
-            style={{width: 445, backgroundColor: 'lightgrey', padding: 20,}}
+            style={[styles.flatlist, {backgroundColor: backgroundColor}]}
             data={searchData}
             keyExtractor={item => item.id}
             renderItem={renderItem}
             ListEmptyComponent={
             <Text style={styles.noUser}>No users found</Text>
             }
-            //horizontal= {false}
-            // numColumns={2}
-            // columnWrapperStyle={styles.columnWrapper}
           />
         </View>
-          {/* <View style = {styles.navbar}>
-            <TouchableOpacity style ={styles.button} onPress={() => navigation.navigate('Home')}>
-              <Text style={styles.buttonText}>Home</Text>
-            </TouchableOpacity>
-            <TouchableOpacity style ={styles.button} onPress={() => navigation.navigate('Skill Swap')}>
-              <Text style={styles.buttonText}>Skill Swap</Text>
-            </TouchableOpacity>
-            <TouchableOpacity style ={styles.button} onPress={() => navigation.navigate('Schedule')}>
-              <Text style={styles.buttonText}>Schedule</Text>
-            </TouchableOpacity>
-          </View> */}
       </View>
 
     );
@@ -117,39 +108,29 @@ export default function Home() {
       flex: 1,
       justifyContent: 'center',
       alignItems: 'center',
-      //padding: 16,
-      backgroundColor: '#f5f5f5',
     },
     content:{
       flex: 0.91,
+      width: '100%',
       justifyContent: 'center',
       alignItems: 'center',
     },
     topbar: {
       flex: 0.06,
-      //position: 'absolute',
-      //top: 0,
-      //height: 25,
       flexDirection: 'row',
       width: '100%',
       padding: 20,
       alignItems: 'center',
       justifyContent: 'space-between',
-      //marginBottom: 20,
-      backgroundColor: 'darkgrey',
     },
     inputArea: {
       flex: 0.03,
       height: 40,
       width: '100%',
-      backgroundColor: 'darkgray',
-      //margin: 10,
       justifyContent: 'center',
-      //alignContent: 'center',
       alignItems: 'center',
       verticalAlign: 'top',
       padding: 20,
-      //marginBottom: 20,
     },
     input: {
       width: '80%',
@@ -157,29 +138,26 @@ export default function Home() {
       borderWidth: 1,
       borderColor: '#ccc',
       borderRadius: 15,
-      backgroundColor: '#fff',
       padding: 10,
     },
     logo: {
       width: 120,
       height: 120,
-      //aspectRatio: 1,
       borderRadius: 90,
-      //padding: 10,
-      //margin: 10,
       
     },
     avatar: {
       width: 50,
       height: 50,
-      //aspectRatio: 1,
       borderRadius: 90,
-      //padding: 10,
-      //margin: 10,
       justifyContent: 'center',
       alignItems: 'center',
       alignContent: 'center',
       
+    },
+    flatlist: {
+      width: 445,  
+      padding: 20,
     },
     username: {
       color: 'black', 
@@ -194,41 +172,12 @@ export default function Home() {
       fontWeight: 'bold',
       marginBottom: 20,
     },
-    navbar: {
-      position: 'absolute',
-      bottom: 0,
-      flex: 0.08,
-      flexDirection: 'row',
-      width: '100%',
-      alignItems: 'stretch',
-      alignContent: 'center',
-      justifyContent: 'space-evenly',
-      gap: 10,
-      backgroundColor: 'black',
-      // padding: 15,
-      // marginBottom: 10,
-      // marginTop: 10,
-    },
-    button: {
-      width: '32%',
-      padding: 20,
-      borderRadius: 8,
-      alignItems: 'center',
-      //backgroundColor: '#007BFF',
-      backgroundColor: 'black',
-    },
-    buttonText: {
-      color: '#f5f5f5',
-      fontWeight: 'bold',
-    },
     linkText: {
-      //width: '100%',
       color: '#007BFF',
       textAlign: 'center',
       marginTop: 20,
       marginVertical: 10,
       textDecorationLine: 'underline',
-      //margin: 10,
       padding: 30,
       borderRadius: 15,
       backgroundColor: '#f5f5f5',
@@ -236,14 +185,12 @@ export default function Home() {
     users: {
       flexDirection: 'row', 
       gap: 25, 
-      //justifyContent: 'space-evenly', 
       alignContent: 'center',
     },
     usersItem: {
       padding: 15,
       margin: 10,
       marginBottom: 10,
-      backgroundColor: '#f5f5f5',
       borderRadius: 8,
       justifyContent: 'center',
       resizeMode: 'contain',
@@ -254,13 +201,11 @@ export default function Home() {
     },
     usersEmail: {
       fontSize: 14,
-      color: '#666',
     },
     usersSkills: {
       width: '75%',
       padding: 10,
       fontSize: 16,
-      color: 'black',
     },
     noUser: {
       fontSize: 15,
@@ -269,10 +214,8 @@ export default function Home() {
       margin: 20,
       padding: 30,
       borderRadius: 15,
-      color: 'darkgray',
-      backgroundColor: '#f5f5f5',
     },
     columnWrapper: {
-      justifyContent: 'space-around', // Add spacing between columns
+      justifyContent: 'space-around',
     },
   });

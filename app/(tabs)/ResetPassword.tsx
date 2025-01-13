@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useUserContext } from '@/components/UserContext';
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert, Image } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert, Image, useColorScheme } from 'react-native';
 import { supabase } from '@/lib/supabase';
 import { useNavigation } from 'expo-router';
 import { BackHandler } from 'react-native';
@@ -11,28 +11,39 @@ export default function ResetPassword() {
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const navigation = useNavigation<any>(); 
+  const colorScheme = useColorScheme();
+  const DarkMode = colorScheme === 'dark';
+  const textColor = DarkMode ? '#fff' : '#000';
+  const backgroundColor = DarkMode ? '#626262' : '#C7C7C7';
+  const SecondaryBackgroundColor = DarkMode ? '#7F8487' : '#B2B2B2';
+  const TertiaryBackgroundColor = DarkMode ? '#929292' : '#E7E7E7';
+  const inputColor = DarkMode ? '#A7A7A7' : '#E7E7E7';
+  const buttonColor = DarkMode ? '#333' : '#007BFF';
+  const buttonTextColor = DarkMode ? '#fff' : '#fff';
 
-  //const { session, thisUser, usersData, userData, fetchSessionAndUserData } = useUserContext();
   const { session, thisUser, userData } = useUserContext();
     
   useEffect(() => {
-    if (!session) {
-      if (navigation.getState().routes[0]?.name !== 'LoginPage') {
+    try {
+      if (!session) {
         navigation.navigate('LoginPage', { screen: 'Login' });
       }
+    } catch (error) {
+      console.error('Navigation Error:', error);
     }
     setEmail(thisUser?.email);
   }, [session]);
+  
 
   useEffect(() => {
       const backAction = () => {
-        navigation.navigate('Edit Profile'); // Navigate to a specific screen
-        return true; // Prevent default back action
+        navigation.navigate('Edit Profile');
+        return true;
       };
   
       const backHandler = BackHandler.addEventListener('hardwareBackPress', backAction);
   
-      return () => backHandler.remove(); // Cleanup
+      return () => backHandler.remove();
     }, [navigation]);
 
   const changePassword = async () => {
@@ -46,12 +57,10 @@ export default function ResetPassword() {
             setPassword(newPassword);
             const { error: signInError } = await supabase.auth.signInWithPassword({ email, password });
             if (signInError) throw signInError;
-            //Alert.alert('Success', 'You are logged in!');
             navigation.navigate('Home', {screen: 'Home'});
           } catch (signInError: any) {
             Alert.alert('Error', signInError.message);
           }
-          //navigation.navigate('Home', {screen: 'Home'});
         } catch (updateError: any) {
           Alert.alert('Error', updateError.message);
         } finally {
@@ -65,16 +74,18 @@ export default function ResetPassword() {
     }
   };
 
+  console.log('Reset Password rendered');
+
   return (
-    <View style={styles.container}>
-      <Text style={styles.title}>Reset Password</Text>
+    <View style={[styles.container, {backgroundColor: backgroundColor}]}>
+      <Text style={[styles.title, {color: textColor}]}>Reset Password</Text>
       <Image source={userData?.avatar_url? {uri: userData?.avatar_url } : require('../Avatar.png')} style={styles.logo} />
       <View style = {styles.content}>
         <Text style= {styles.name}>{userData?.name}</Text>
         <Text style= {styles.userName}>@{userData?.username}</Text>
       </View>
       <TextInput
-        style={styles.input}
+        style={[styles.input, {backgroundColor: inputColor}]}
         placeholder="Enter new Password"
         value={newPassword}
         onChangeText={setNewPassword}
@@ -82,19 +93,19 @@ export default function ResetPassword() {
       />
 
       <TextInput
-        style={styles.input}
+        style={[styles.input, {backgroundColor: inputColor}]}
         placeholder="Confirm Password"
         value={confirmPassword}
         onChangeText={setConfirmPassword}
         secureTextEntry
       />
 
-      <TouchableOpacity style={styles.button} onPress={changePassword}>
-        <Text style={styles.buttonText}>Save</Text>
+      <TouchableOpacity style={[styles.button, {backgroundColor: buttonColor}]} onPress={changePassword}>
+        <Text style={[styles.buttonText, {color: buttonTextColor}]}>Save</Text>
       </TouchableOpacity>
 
-      <TouchableOpacity style={styles.button} onPress={() => navigation.navigate('Edit Profile')}>
-        <Text style={styles.buttonText}>Cancel</Text>
+      <TouchableOpacity style={[styles.button, {backgroundColor: buttonColor}]} onPress={() => navigation.navigate('Edit Profile')}>
+        <Text style={[styles.buttonText, {color: buttonTextColor}]}>Cancel</Text>
       </TouchableOpacity>
 
     </View>
@@ -107,8 +118,6 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     padding: 10,
-    //margin: 10,
-    backgroundColor: '#f5f5f5',
   },
   logo: {
     width: 250,
@@ -143,7 +152,6 @@ const styles = StyleSheet.create({
     borderColor: '#ccc',
     borderRadius: 8,
     marginBottom: 20,
-    backgroundColor: '#fff',
   },
   button: {
     width: '25%',
@@ -151,10 +159,8 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     alignItems: 'center',
     marginTop: 20,
-    backgroundColor: '#007BFF',
   },
   buttonText: {
-    color: '#fff',
     fontWeight: 'bold',
   },
   linkText: {
