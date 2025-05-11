@@ -41,10 +41,10 @@ const SignupPage: React.FC = () => {
         });  
         if (signUpError) throw signUpError;  
         Alert.alert('Success', 'Account created! Please check your email for confirmation.');
-        setUser(userdata.user);
+        setUser(userdata?.user);
         try {
           const { data: insertData, error: insertError } = await supabase.from('profiles').upsert({
-            authid: userdata.user?.id,
+            authid: userdata?.user?.id,
             name: name,
             username: username,
             email: email,
@@ -53,7 +53,7 @@ const SignupPage: React.FC = () => {
           });
           if (insertError) throw insertError;
           console.log('User data saved:', insertData);
-          navigation.navigate('LoginPage');    
+          navigation.navigate('Login');    
         } catch (insertError: any) {
           Alert.alert('Error', insertError.message);
         }
@@ -126,7 +126,7 @@ const SignupPage: React.FC = () => {
       <TouchableOpacity style={[styles.button, {backgroundColor: buttonColor}]} onPress={handleSignup}>
         <Text style={[styles.buttonText, {color: buttonTextColor}]}>Sign Up</Text>
       </TouchableOpacity>
-      <TouchableOpacity onPress={() => navigation.navigate('LoginPage', {screen: 'Login'})}>
+      <TouchableOpacity onPress={() => navigation.navigate('Login')}>
         <Text style={styles.linkText}>Already have an account? Login</Text>
       </TouchableOpacity>
     </View>

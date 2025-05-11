@@ -22,13 +22,13 @@ export default function Profile(){
     const buttonColor = DarkMode ? '#333' : '#007BFF';
     const buttonTextColor = DarkMode ? '#fff' : '#fff';
     
-    const { session, userData, fetchSessionAndUserData } = useUserContext();
+    const { session, userData, fetchSessionAndUserData, clearUserData } = useUserContext();
 
     useEffect(() => {
       if(isFocused){
         try {
           if (!session) {
-            navigation.navigate('LoginPage', { screen: 'Login' });
+            navigation.navigate('Login');
           }
         } catch (error) {
           console.error('Navigation Error:', error);
@@ -39,9 +39,10 @@ export default function Profile(){
 
     const handleLogout = async () => {
       try {
+        clearUserData();
         const { error } = await supabase.auth.signOut();
         if (error) throw error;
-        navigation.navigate('LoginPage', {screen: 'Login'});
+        navigation.navigate('Login');
         Alert.alert('Success', 'You have been logged out.');
       } catch (error: any) {
         Alert.alert('Error', error.message);
@@ -49,7 +50,7 @@ export default function Profile(){
     };
 
     function editProfile() {
-      navigation.navigate('Edit Profile');
+      navigation.navigate('EditProfile');
     }
 
   useEffect(() => {
@@ -65,26 +66,26 @@ export default function Profile(){
   
   console.log('Profile rendered');
 
-      return(
-        <View style= {[styles.container, {backgroundColor: backgroundColor}]}>
-            <Image source= {userData?.avatar_url? {uri: userData?.avatar_url } : require('../Avatar.png')} style= {[styles.logo, {marginTop: 10,}]}></Image>
-            <View style = {styles.content}>
-              <Text style= {styles.title}>Name: {userData?.name}</Text>
-              <Text style= {styles.title}>Username: @{userData?.username}</Text>
-              <Text style= {styles.title}>Email: {userData?.email}</Text>
-              <Text style= {styles.title}>Description: {userData?.description}</Text>
-              <Text style= {styles.title}>Skills Offered: {userData?.skillsOffered}</Text>
-              <Text style= {styles.title}>Skills Required: {userData?.skillsRequired}</Text>
-            </View>
-            <TouchableOpacity style={[styles.button, {backgroundColor: buttonColor}]} onPress={editProfile}>
-                <Text style={[styles.buttonText, {color: buttonTextColor}]}>Edit profile</Text>
-            </TouchableOpacity>
-            <TouchableOpacity style={[styles.button, {backgroundColor: 'red',}]} onPress={handleLogout}>
-                <Text style={[styles.buttonText, {color: buttonTextColor}]}>Log Out</Text>
-            </TouchableOpacity>
+  return(
+    <View style= {[styles.container, {backgroundColor: backgroundColor}]}>
+        <Image source= {userData?.avatar_url? {uri: userData?.avatar_url } : require('../Avatar.png')} style= {[styles.logo, {marginTop: 10,}]}></Image>
+        <View style = {styles.content}>
+          <Text style= {[styles.title, {color: textColor}]}>Name: {userData?.name}</Text>
+          <Text style= {[styles.title, {color: textColor}]}>Username: @{userData?.username}</Text>
+          <Text style= {[styles.title, {color: textColor}]}>Email: {userData?.email}</Text>
+          <Text style= {[styles.title, {color: textColor}]}>Description: {userData?.description}</Text>
+          <Text style= {[styles.title, {color: textColor}]}>Skills Offered: {userData?.skillsOffered}</Text>
+          <Text style= {[styles.title, {color: textColor}]}>Skills Required: {userData?.skillsRequired}</Text>
         </View>
+        <TouchableOpacity style={[styles.button, {backgroundColor: buttonColor}]} onPress={editProfile}>
+            <Text style={[styles.buttonText, {color: buttonTextColor}]}>Edit profile</Text>
+        </TouchableOpacity>
+        <TouchableOpacity style={[styles.button, {backgroundColor: 'red',}]} onPress={handleLogout}>
+            <Text style={[styles.buttonText, {color: buttonTextColor}]}>Log Out</Text>
+        </TouchableOpacity>
+    </View>
 
-      );
+  );
 
 }
 

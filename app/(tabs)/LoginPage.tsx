@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useUserContext } from '@/components/UserContext';
 import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert, Image, useColorScheme } from 'react-native';
 import { supabase } from '@/lib/supabase';
@@ -20,13 +20,13 @@ const LoginPage: React.FC = () => {
   const buttonColor = DarkMode ? '#333' : '#007BFF';
   const buttonTextColor = DarkMode ? '#fff' : '#fff';
 
-  const { session, fetchSessionAndUserData } = useUserContext();
+  const { session, fetchSessionAndUserData, clearUserData } = useUserContext();
 
   const checkSession = async () => {
     if(isFocused){
       try {
         if (session) {
-          navigation.navigate('HomePage', { screen: 'Home' });
+          navigation.navigate('Home');
         }
       } catch (error) {
         console.error('Navigation Error:', error);
@@ -34,23 +34,35 @@ const LoginPage: React.FC = () => {
     }
   };
 
-  useEffect(() => {
-    checkSession();
-  }, [session, isFocused]);
+  /*const checkSession = useCallback(() => {
+    console.log('Session at login:', session);
+    if (session && isFocused) {
+      console.log('Navigating to Home');
+      navigation.navigate('Home');
+    }
+  }, [session]);*/
+  
+  //hassan654666@gmail.com
+  //dsaqw_1761
 
   useEffect(() => {
     checkSession();
-  }, []);
+  }, [session]);
+
+  /*useEffect(() => {
+    checkSession();
+  }, []);*/
 
   const handleLogin = async () => {
     try {
       const { error } = await supabase.auth.signInWithPassword({ email, password });
       if (error) throw error;
       Alert.alert('Success', 'You are logged in!');
-      fetchSessionAndUserData();
-      navigation.navigate('HomePage', {screen: 'Home'});
+      //fetchSessionAndUserData();
+      navigation.navigate('Home');
     } catch (error: any) {
       Alert.alert('Error', error.message);
+      clearUserData();
     }
   };
 
@@ -79,13 +91,12 @@ const LoginPage: React.FC = () => {
         <Text style={[styles.buttonText, {color: buttonTextColor}]}>Login</Text>
       </TouchableOpacity>
 
-      <TouchableOpacity onPress={() => navigation.navigate('Forgot Password')}>
+      <TouchableOpacity onPress={() => navigation.navigate('ForgotPassword')}>
         <Text style={styles.linkText}>Forgot Password?</Text>
       </TouchableOpacity>
       <TouchableOpacity onPress={() => navigation.navigate('Signup')}>
         <Text style={styles.linkText}>Don't have an account? Sign up</Text>
       </TouchableOpacity>
-
     </View>
   );
 };

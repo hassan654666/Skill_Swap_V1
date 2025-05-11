@@ -29,7 +29,7 @@ export default function SkillSwap() {
           <TouchableOpacity style ={styles.button} onPress={() => navigation.navigate('Home')}>
             <Text style={styles.buttonText}>Home</Text>
           </TouchableOpacity>
-          <TouchableOpacity style ={styles.button} onPress={() => navigation.navigate('Skill Swap')}>
+          <TouchableOpacity style ={styles.button} onPress={() => navigation.navigate('SkillSwap')}>
             <Text style={styles.buttonText}>Skill Swap</Text>
           </TouchableOpacity>
           <TouchableOpacity style ={styles.button} onPress={() => navigation.navigate('Schedule')}>

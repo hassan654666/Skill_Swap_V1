@@ -30,7 +30,7 @@ export default function EditProfile(){
   const { session, thisUser, userData, fetchSessionAndUserData } = useUserContext();
     
   function resetPassword() {
-    navigation.navigate('Reset Password');
+    navigation.navigate('ResetPassword');
   };
 
   const save = async () => {

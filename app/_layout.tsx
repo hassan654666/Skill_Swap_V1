@@ -1,5 +1,5 @@
 import FontAwesome from '@expo/vector-icons/FontAwesome';
-import { DarkTheme, DefaultTheme, ThemeProvider } from '@react-navigation/native';
+import { DarkTheme, DefaultTheme, NavigationContainer, ThemeProvider } from '@react-navigation/native';
 import { useFonts } from 'expo-font';
 import { Stack } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
@@ -11,6 +11,7 @@ import { useNavigation } from 'expo-router';
 
 import { useColorScheme } from '@/components/useColorScheme';
 import Profile from './(tabs)/Profile';
+import Inbox from './(tabs)/Inbox';
 
 export {
   // Catch any errors thrown by the Layout component.
@@ -51,12 +52,13 @@ export default function RootLayout() {
 
 function RootLayoutNav() {
   const colorScheme = useColorScheme();
-  const navigation = useNavigation(); // Correct usage of useNavigation
+  const navigation = useNavigation();
   const linking = {
     prefixes: ['skillswap://'],
     config: {
       screens: {
         '(tabs)': {
+          path: '',
           screens: {
             Home: 'Home',
             LoginPage: 'LoginPage',
@@ -67,6 +69,8 @@ function RootLayoutNav() {
             Schedule: 'Schedule',
             Profile: 'Profile',
             EditProfile: 'EditProfile',
+            Inbox: 'Inbox',
+            ChatScreen: 'ChatScreen/:receiverId',
           },
         },
         modal: 'modal',
@@ -74,30 +78,11 @@ function RootLayoutNav() {
     },
   };
 
-  // useEffect(() => {
-  //   const handleDeepLink = async (event: Linking.EventType) => {
-  //     const { url } = event;
-  //     if (url?.startsWith('skillswap://Home')) {
-  //       const { data, error } = await supabase.auth.getSession();
-  //       if (error) {
-  //         console.error('Failed to retrieve session:', error.message);
-  //         return;
-  //       }
-  //       console.log('Session retrieved:', data.session);
-  //       navigation.navigate('Home');// Redirect to your home screen logic here
-  //     }
-  //   };
-
-  //   Linking.addEventListener('url', handleDeepLink);
-
-  //   return () => Linking.removeEventListener('url', handleDeepLink);
-  // }, []);
-
   return (
     <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
-      <Stack linking={linking}>
-        <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-        <Stack.Screen name="modal" options={{ presentation: 'modal' }} />
+      <Stack linking={linking} theme={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
+          <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+          <Stack.Screen name="modal" options={{ presentation: 'modal' }} />
       </Stack>
     </ThemeProvider>
   );

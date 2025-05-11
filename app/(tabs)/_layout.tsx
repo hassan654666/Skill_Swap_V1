@@ -14,6 +14,8 @@ import ForgotPassword from './ForgotPassword';
 import ResetPassword from './ResetPassword';
 import SkillSwap from './SkillSwap'
 import Schedule from './Schedule';
+import Inbox from './Inbox';
+import ChatScreen from './ChatScreen';
 import Profile from './Profile';
 import EditProfile from './EditProfile';
 import FontAwesome from '@expo/vector-icons/FontAwesome';
@@ -26,7 +28,7 @@ const Stack = createNativeStackNavigator();
 export default function TabLayout() {
   const [isFirstLaunch, setIsFirstLaunch] = useState<boolean | null>(null);
   const [loading, setLoading] = useState(true); 
-  const [initialRoute, setInitialRoute] = useState<string>('LoginPage');
+  const [initialRoute, setInitialRoute] = useState<string>('Login');
   const colorScheme = useColorScheme();
 
   const checkFirstLaunch = async () => {
@@ -35,7 +37,7 @@ export default function TabLayout() {
       setIsFirstLaunch(true);
       await AsyncStorage.setItem('hasLaunched', 'true');
     } else {
-      setIsFirstLaunch(false);
+      setIsFirstLaunch(false);//false
     }
     setLoading(false);
   };
@@ -43,67 +45,29 @@ export default function TabLayout() {
   const checkSession = async () => {
     const asyncSession = await AsyncStorage.getItem('session');
     try {
-      if (asyncSession) {
-        setInitialRoute('HomePage');
-      } else {
-        setInitialRoute('LoginPage');
-      }
+      setInitialRoute(asyncSession ? 'Home' : 'Login');
     } catch (error) {
       console.error('Navigation Error:', error);
     }
-    };
-    useEffect(() => {
-      checkFirstLaunch();
-      checkSession();
-    }, []);
+  };
 
-  if (loading) {
+  useEffect(() => {
+    const initializeApp = async () => {
+      await checkFirstLaunch();
+      await checkSession();
+    };
+    initializeApp();
+  }, []);
+
+  if (loading || initialRoute === null || isFirstLaunch === null) {
     return null;
   }
   
-  if (initialRoute === null) {
-    return null;
-  }
-
-  if (isFirstLaunch === null) {
-    return null;
-  }
-
   if (isFirstLaunch) {
-    return <SplashScreen onFinish={() => [setIsFirstLaunch(false), checkSession()]} />;
-  }
-
-  function HomeStack() {
-    return (
-      <Stack.Navigator
-      initialRouteName='Home'
-      screenOptions={{
-        headerShown: false,
-        statusBarBackgroundColor: 'black',
-        }}>
-        <Stack.Screen name="Home" component={Home} />
-        <Stack.Screen name="Profile" component={Profile} />
-        <Stack.Screen name="Edit Profile" component={EditProfile} />
-        <Stack.Screen name="Reset Password" component={ResetPassword} />
-        <Stack.Screen name="Skill Swap" component={SkillSwap} />
-        <Stack.Screen name="Schedule" component={Schedule} />
-      </Stack.Navigator>
-    );
-  }
-
-  function LoginStack() {
-    return (
-      <Stack.Navigator
-      initialRouteName='Login'
-      screenOptions={{
-        headerShown: false,
-        statusBarBackgroundColor: 'black',
-        }}>
-        <Stack.Screen name="Login" component={LoginPage} />
-        <Stack.Screen name="Signup" component={Signup} />
-        <Stack.Screen name="Forgot Password" component={ForgotPassword} />
-      </Stack.Navigator>
-    );
+    return <SplashScreen onFinish={() => {
+      setIsFirstLaunch(false);
+      checkSession();
+    }} />;
   }
 
   return (
@@ -113,15 +77,19 @@ export default function TabLayout() {
         initialRouteName={initialRoute}
         screenOptions={{
           headerShown: false,
+          statusBarBackgroundColor: 'black',
         }}>
-        <Stack.Screen
-          name="HomePage"
-          component={HomeStack}
-        />
-        <Stack.Screen 
-        name="LoginPage" 
-        component={LoginStack} 
-        />
+          <Stack.Screen name="Login" component={LoginPage} />
+          <Stack.Screen name="Signup" component={Signup} />
+          <Stack.Screen name="ForgotPassword" component={ForgotPassword} />
+          <Stack.Screen name="Home" component={Home} />
+          <Stack.Screen name="Profile" component={Profile} />
+          <Stack.Screen name="EditProfile" component={EditProfile} />
+          <Stack.Screen name="ResetPassword" component={ResetPassword} />
+          <Stack.Screen name="SkillSwap" component={SkillSwap} />
+          <Stack.Screen name="Schedule" component={Schedule} />
+          <Stack.Screen name="Inbox" component={Inbox} />
+          <Stack.Screen name="ChatScreen" component={ChatScreen} />
       </Stack.Navigator>
     </UserProvider>
   </ThemeProvider>

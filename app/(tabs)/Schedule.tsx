@@ -1,4 +1,4 @@
-import { Text, View, StyleSheet, TouchableOpacity, useColorScheme } from 'react-native';
+import { Text, View, StyleSheet, TouchableOpacity, useColorScheme, Image } from 'react-native';
 import { useNavigation } from 'expo-router';
 import { useEffect, useState } from 'react';
 import { useUserContext } from '@/components/UserContext';
@@ -19,13 +19,14 @@ export default function Schedule() {
 
     return (
       <View style= {[styles.container, {backgroundColor: backgroundColor}]}>
+        <Image source={require('../logo.png')} style={styles.logo} />
         <Text style= {styles.title}>Schedule</Text>
         <View style = {styles.navbar}>
           <TouchableOpacity style ={styles.button} onPress={() => navigation.navigate('Home')}>
             <Text style={styles.buttonText}>Home</Text>
           </TouchableOpacity>
-          <TouchableOpacity style ={styles.button} onPress={() => navigation.navigate('Skill Swap')}>
-            <Text style={styles.buttonText}>Skill Swap</Text>
+          <TouchableOpacity style ={styles.button} onPress={() => navigation.navigate('Inbox')}>
+            <Text style={styles.buttonText}>Inbox</Text>
           </TouchableOpacity>
           <TouchableOpacity style ={styles.button} onPress={() => navigation.navigate('Schedule')}>
             <Text style={styles.buttonText}>Schedule</Text>
@@ -40,6 +41,10 @@ export default function Schedule() {
       flex: 1,
       justifyContent: 'center',
       alignItems: 'center',
+    },
+    logo: {
+      width: 500,
+      height: 500,
     },
     title: {
       fontSize: 24,

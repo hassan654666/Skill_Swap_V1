@@ -8,6 +8,7 @@ interface UserContextType {
   usersData: any[];
   userData: any;
   fetchSessionAndUserData: () => Promise<void>;
+  clearUserData: () => void;
 }
 
 const UserContext = createContext<UserContextType | undefined>(undefined);
@@ -113,7 +114,8 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
     return () => {
       subscription.subscription?.unsubscribe();
     };
-  }, [fetchSessionAndUserData, clearUserData]);
+  //}, [fetchSessionAndUserData, clearUserData]);
+  }, []);
 
   return (
     <UserContext.Provider value={{
@@ -121,7 +123,8 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
       thisUser: thisUserRef.current,
       usersData: usersDataRef.current,
       userData: userDataRef.current,
-      fetchSessionAndUserData
+      fetchSessionAndUserData,
+      clearUserData
     }}>
       {children}
     </UserContext.Provider>

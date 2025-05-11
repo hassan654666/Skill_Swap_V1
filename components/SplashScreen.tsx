@@ -79,6 +79,7 @@ const SplashScreen: React.FC<SplashScreenProps> = ({ onFinish }) => {
             <FlatList
             style= {styles.flatlist}
             ref={flatListRef}
+            initialNumToRender={splashData.length}
             data={splashData}
             renderItem={renderItem}
             keyExtractor={(item) => item.id}
@@ -103,7 +104,7 @@ const SplashScreen: React.FC<SplashScreenProps> = ({ onFinish }) => {
                 />
                 ))}
             </View>
-            <TouchableOpacity style={[styles.button, {backgroundColor: buttonColor}]} onPress={handleNext}>
+            <TouchableOpacity style={[styles.button, {backgroundColor: buttonColor}]} onPress={()=> handleNext()}>
                 <Text style={[styles.buttonText, {color: buttonTextColor}]}>
                 {currentIndex === splashData.length - 1 ? 'Get Started' : 'Next'}
                 </Text>

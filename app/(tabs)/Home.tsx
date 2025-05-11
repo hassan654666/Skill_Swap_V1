@@ -4,6 +4,7 @@ import { View, Text, Image, Button, ScrollView, Alert, StyleSheet, TextInput, us
 import { useNavigation } from 'expo-router';
 import { useIsFocused } from '@react-navigation/native';
 import { darkColors } from '@rneui/themed';
+import { FontAwesome } from '@expo/vector-icons';
 
 export default function Home() {
 
@@ -26,7 +27,7 @@ export default function Home() {
     if(isFocused){
       try {
         if (!session) {
-          navigation.navigate('LoginPage', { screen: 'Login' });
+          navigation.navigate('Login');
         }
       } catch (error) {
         console.error('Navigation Error:', error);
@@ -38,12 +39,12 @@ export default function Home() {
     checkSession();
   }, [session, isFocused]);
 
-  useEffect(() => {
+  /*useEffect(() => {
     checkSession();
-  }, []);
+  }, []);*/
 
-  const searchData = usersData.filter((users: any) =>
-    users.name.toLowerCase().includes(searchText.toLowerCase()) || users.skillsOffered.toLowerCase().includes(searchText.toLowerCase())
+  const searchData = usersData?.filter((users: any) =>
+    users?.name?.toLowerCase().includes(searchText?.toLowerCase()) || users?.skillsOffered?.toLowerCase().includes(searchText?.toLowerCase())
   );
 
   function goToProfile(){
@@ -53,22 +54,24 @@ export default function Home() {
   const renderItem = ({ item }: any) => (
     <TouchableOpacity
       style={[styles.usersItem, {backgroundColor: TertiaryBackgroundColor}]}
-      onPress={() =>
-        navigation.navigate('Skill Swap', { userId: item.id, name: item.name })
+      onPress={() => navigation.navigate('ChatScreen', { receiverId: item?.id })
       }
     >
       <View style= {styles.users}>
-        <Image source= {item.avatar_url? { uri: item.avatar_url } : require('../Avatar.png')} style= { styles.avatar} resizeMode='cover'></Image>
+        <Image source= {item?.avatar_url? { uri: item?.avatar_url } : require('../Avatar.png')} style= { styles.avatar} resizeMode='cover'></Image>
         <View>
-          <Text style={[styles.usersName, {color: textColor}]}>{item.name}</Text>
-          <Text style={[styles.usersEmail, {color: textColor}]}>{item.email}</Text>
-          <Text style={[styles.usersSkills, {color: textColor}]}>Skills Offered: {item.skillsOffered}</Text>
+          {/*<Text style={[styles.usersName, {color: textColor}]}>{item.id}</Text>*/}
+          <Text style={[styles.usersName, {color: textColor}]}>{item?.name}</Text>
+          <Text style={[styles.usersEmail, {color: textColor}]}>{item?.email}</Text>
+          <Text style={[styles.usersSkills, {color: textColor}]}>Skills Offered: {item?.skillsOffered}</Text>
         </View>
       </View>
     </TouchableOpacity>
   );
 
-  console.log('Home rendered');
+  // console.log('Home rendered');
+  // console.log('user Id:', userData.id);
+  // console.log('users Id:', usersData.map(user => user.id).join(', '));
 
     return (
       <View style={styles.container}>
@@ -91,12 +94,25 @@ export default function Home() {
           <FlatList
             style={[styles.flatlist, {backgroundColor: backgroundColor}]}
             data={searchData}
-            keyExtractor={item => item.id}
+            keyExtractor={item => item?.id}
             renderItem={renderItem}
             ListEmptyComponent={
             <Text style={styles.noUser}>No users found</Text>
             }
           />
+        </View>
+        <View style = {styles.navbar}>
+          <TouchableOpacity style ={styles.navButton} onPress={() => navigation.navigate('Home')}>
+            <FontAwesome name="home" size={24} color={buttonTextColor} />
+            <Text style={styles.buttonText}>Home</Text>
+          </TouchableOpacity>
+          <TouchableOpacity style ={styles.navButton} onPress={() => navigation.navigate('Inbox')}>
+            <FontAwesome name="comments" size={24} color={buttonTextColor} />
+            <Text style={styles.buttonText}>Inbox</Text>
+          </TouchableOpacity>
+          {/* <TouchableOpacity style ={styles.button} onPress={() => navigation.navigate('Schedule')}>
+            <Text style={styles.buttonText}>Schedule</Text>
+          </TouchableOpacity> */}
         </View>
       </View>
 
@@ -156,7 +172,7 @@ export default function Home() {
       
     },
     flatlist: {
-      width: 445,  
+      width: '100%',  
       padding: 20,
     },
     username: {
@@ -217,5 +233,26 @@ export default function Home() {
     },
     columnWrapper: {
       justifyContent: 'space-around',
+    },
+    navbar: {
+      position: 'absolute',
+      bottom: 0,
+      flex: 0.08,
+      flexDirection: 'row',
+      width: '100%',
+      gap: 0,
+      alignContent: 'center',
+      justifyContent: 'space-around',
+      backgroundColor: 'black',
+    },
+    navButton: {
+      width: '50%',
+      padding: 20,
+      borderRadius: 8,
+      alignItems: 'center',
+    },
+    buttonText: {
+      color: '#f5f5f5',
+      fontWeight: 'bold',
     },
   });

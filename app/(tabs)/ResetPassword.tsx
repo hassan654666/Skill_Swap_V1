@@ -26,7 +26,7 @@ export default function ResetPassword() {
   useEffect(() => {
     try {
       if (!session) {
-        navigation.navigate('LoginPage', { screen: 'Login' });
+        navigation.navigate('Login');
       }
     } catch (error) {
       console.error('Navigation Error:', error);
@@ -37,7 +37,7 @@ export default function ResetPassword() {
 
   useEffect(() => {
       const backAction = () => {
-        navigation.navigate('Edit Profile');
+        navigation.navigate('EditProfile');
         return true;
       };
   
@@ -57,7 +57,7 @@ export default function ResetPassword() {
             setPassword(newPassword);
             const { error: signInError } = await supabase.auth.signInWithPassword({ email, password });
             if (signInError) throw signInError;
-            navigation.navigate('Home', {screen: 'Home'});
+            navigation.navigate('Home');
           } catch (signInError: any) {
             Alert.alert('Error', signInError.message);
           }
@@ -81,8 +81,8 @@ export default function ResetPassword() {
       <Text style={[styles.title, {color: textColor}]}>Reset Password</Text>
       <Image source={userData?.avatar_url? {uri: userData?.avatar_url } : require('../Avatar.png')} style={styles.logo} />
       <View style = {styles.content}>
-        <Text style= {styles.name}>{userData?.name}</Text>
-        <Text style= {styles.userName}>@{userData?.username}</Text>
+        <Text style={[styles.name, {color: textColor}]}>{userData?.name}</Text>
+        <Text style= {[styles.userName, {color: textColor}]}>@{userData?.username}</Text>
       </View>
       <TextInput
         style={[styles.input, {backgroundColor: inputColor}]}
@@ -104,7 +104,7 @@ export default function ResetPassword() {
         <Text style={[styles.buttonText, {color: buttonTextColor}]}>Save</Text>
       </TouchableOpacity>
 
-      <TouchableOpacity style={[styles.button, {backgroundColor: buttonColor}]} onPress={() => navigation.navigate('Edit Profile')}>
+      <TouchableOpacity style={[styles.button, {backgroundColor: buttonColor}]} onPress={() => navigation.navigate('EditProfile')}>
         <Text style={[styles.buttonText, {color: buttonTextColor}]}>Cancel</Text>
       </TouchableOpacity>
 
