@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useUserContext } from '@/components/UserContext';
 import { View, Text, Image, Button, ScrollView, Alert, StyleSheet, TextInput, useColorScheme, TouchableOpacity, FlatList } from 'react-native';
+//import { useMessageNotification } from '@/hooks/useMessageNotification';
 import { useNavigation } from 'expo-router';
 import { useIsFocused } from '@react-navigation/native';
 import { darkColors } from '@rneui/themed';
@@ -16,7 +17,7 @@ export default function Home() {
   const textColor = DarkMode ? '#fff' : '#000';
   const backgroundColor = DarkMode ? '#626262' : '#C7C7C7';
   const SecondaryBackgroundColor = DarkMode ? '#7F8487' : '#B2B2B2';
-  const TertiaryBackgroundColor = DarkMode ? '#929292' : '#E7E7E7';
+  const TertiaryBackgroundColor = DarkMode ? '#828282' : '#E7E7E7';
   const inputColor = DarkMode ? '#A7A7A7' : '#E7E7E7';
   const buttonColor = DarkMode ? '#333' : '#007BFF';
   const buttonTextColor = DarkMode ? '#fff' : '#fff';
@@ -44,26 +45,28 @@ export default function Home() {
   }, []);*/
 
   const searchData = usersData?.filter((users: any) =>
-    users?.name?.toLowerCase().includes(searchText?.toLowerCase()) || users?.skillsOffered?.toLowerCase().includes(searchText?.toLowerCase())
+    users?.name?.toLowerCase().includes(searchText?.toLowerCase()) || users?.skillsOffered?.toLowerCase().includes(searchText?.toLowerCase()) || users?.username?.toLowerCase().includes(searchText?.toLowerCase())
   );
 
   function goToProfile(){
     navigation.navigate('Profile');
   }
 
+  //useMessageNotification();
+
   const renderItem = ({ item }: any) => (
     <TouchableOpacity
       style={[styles.usersItem, {backgroundColor: TertiaryBackgroundColor}]}
-      onPress={() => navigation.navigate('ChatScreen', { receiverId: item?.id })
+      onPress={() => navigation.navigate('UserProfile', { userId: item?.id })
       }
     >
       <View style= {styles.users}>
         <Image source= {item?.avatar_url? { uri: item?.avatar_url } : require('../Avatar.png')} style= { styles.avatar} resizeMode='cover'></Image>
         <View>
           {/*<Text style={[styles.usersName, {color: textColor}]}>{item.id}</Text>*/}
-          <Text style={[styles.usersName, {color: textColor}]}>{item?.name}</Text>
-          <Text style={[styles.usersEmail, {color: textColor}]}>{item?.email}</Text>
-          <Text style={[styles.usersSkills, {color: textColor}]}>Skills Offered: {item?.skillsOffered}</Text>
+          <Text numberOfLines={2} style={[styles.usersName, {color: textColor}]}>{item?.name}</Text>
+          <Text numberOfLines={1} style={[styles.usersUsername, {color: textColor}]}>@{item?.username}</Text>
+          <Text numberOfLines={4} style={[styles.usersSkills, {color: textColor}]}>Skills Offered: {item?.skillsOffered}</Text>
         </View>
       </View>
     </TouchableOpacity>
@@ -74,13 +77,14 @@ export default function Home() {
   // console.log('users Id:', usersData.map(user => user.id).join(', '));
 
     return (
-      <View style={styles.container}>
+      <View style={[styles.container, {backgroundColor: backgroundColor}]}>
         <View style= {[styles.topbar, {backgroundColor: SecondaryBackgroundColor}]}>
           <Image source= {require('../logo.png')} style= {[styles.logo, {marginTop: 10,}]}></Image>
           <TouchableOpacity style= { [styles.avatar, {margin: 25, marginTop: 25,}] } onPress={goToProfile}>
             <Image source= {userData?.avatar_url? { uri: userData?.avatar_url } : require('../Avatar.png')} style= { styles.avatar} resizeMode='cover'></Image>
             <Text style= {[styles.username, {color: textColor}]}>{userData?.name || 'Guest'}</Text>
           </TouchableOpacity>
+          
         </View>
         <View style= {[styles.inputArea, { backgroundColor: SecondaryBackgroundColor}]}>
         <TextInput
@@ -110,7 +114,7 @@ export default function Home() {
             <FontAwesome name="comments" size={24} color={buttonTextColor} />
             <Text style={styles.buttonText}>Inbox</Text>
           </TouchableOpacity>
-          {/* <TouchableOpacity style ={styles.button} onPress={() => navigation.navigate('Schedule')}>
+          {/* <TouchableOpacity style ={styles.navButton} onPress={() => navigation.navigate('Schedule')}>
             <Text style={styles.buttonText}>Schedule</Text>
           </TouchableOpacity> */}
         </View>
@@ -126,27 +130,36 @@ export default function Home() {
       alignItems: 'center',
     },
     content:{
-      flex: 0.91,
+      flex: 0.9,
       width: '100%',
       justifyContent: 'center',
       alignItems: 'center',
+      marginBottom: '20%',
+      paddingBottom: 20,
     },
     topbar: {
-      flex: 0.06,
+      //position: 'absolute',
+      //top: 0,
+      flex: 0.08,
       flexDirection: 'row',
       width: '100%',
+      //height: 100,
       padding: 20,
       alignItems: 'center',
       justifyContent: 'space-between',
+      
     },
     inputArea: {
+      //position: 'absolute',
+      //top: 90,
       flex: 0.03,
-      height: 40,
+      //height: 100,
       width: '100%',
       justifyContent: 'center',
       alignItems: 'center',
       verticalAlign: 'top',
       padding: 20,
+      
     },
     input: {
       width: '80%',
@@ -173,7 +186,7 @@ export default function Home() {
     },
     flatlist: {
       width: '100%',  
-      padding: 20,
+      
     },
     username: {
       color: 'black', 
@@ -200,26 +213,34 @@ export default function Home() {
     },
     users: {
       flexDirection: 'row', 
+      maxWidth: '100%',
       gap: 25, 
       alignContent: 'center',
+      //backgroundColor: 'red'
     },
     usersItem: {
-      padding: 15,
+      padding: 20,
       margin: 10,
+      //paddingLeft: 40,
       marginBottom: 10,
       borderRadius: 8,
+      width: '90%',
       justifyContent: 'center',
+      alignSelf: 'center',
       resizeMode: 'contain',
+      flexShrink: 1,
     },
     usersName: {
       fontSize: 18,
+      maxWidth: '98%',
       fontWeight: 'bold',
     },
-    usersEmail: {
+    usersUsername: {
+      maxWidth: '98%',
       fontSize: 14,
     },
     usersSkills: {
-      width: '75%',
+      maxWidth: '98%',
       padding: 10,
       fontSize: 16,
     },
@@ -237,7 +258,7 @@ export default function Home() {
     navbar: {
       position: 'absolute',
       bottom: 0,
-      flex: 0.08,
+      //flex: 0.1,
       flexDirection: 'row',
       width: '100%',
       gap: 0,

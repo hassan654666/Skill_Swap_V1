@@ -16,7 +16,7 @@ export default function ResetPassword() {
   const textColor = DarkMode ? '#fff' : '#000';
   const backgroundColor = DarkMode ? '#626262' : '#C7C7C7';
   const SecondaryBackgroundColor = DarkMode ? '#7F8487' : '#B2B2B2';
-  const TertiaryBackgroundColor = DarkMode ? '#929292' : '#E7E7E7';
+  const TertiaryBackgroundColor = DarkMode ? '#828282' : '#E7E7E7';
   const inputColor = DarkMode ? '#A7A7A7' : '#E7E7E7';
   const buttonColor = DarkMode ? '#333' : '#007BFF';
   const buttonTextColor = DarkMode ? '#fff' : '#fff';
@@ -120,16 +120,17 @@ const styles = StyleSheet.create({
     padding: 10,
   },
   logo: {
-    width: 250,
-    height: 250,
+    width: '60%',
+    height: 'auto',
+    aspectRatio: 1,
   },
   title: {
     fontSize: 40,
     fontWeight: 'bold',
-    marginBottom: 30,
+    marginBottom: 20,
   },
   content:{
-    flex: 0.3,
+    flex: 0.5,
     justifyContent: 'center',
     alignContent: 'center',
     alignItems: 'center',
@@ -139,11 +140,13 @@ const styles = StyleSheet.create({
     fontSize: 24,
     fontWeight: 'bold',
     textAlign: 'center',
+    padding: 5,
   },
   userName: {
     fontSize: 14,
     fontWeight: 'bold',
     textAlign: 'center',
+    padding: 5,
   },
   input: {
     width: '80%',
@@ -158,7 +161,7 @@ const styles = StyleSheet.create({
     padding: 10,
     borderRadius: 8,
     alignItems: 'center',
-    marginTop: 20,
+    margin: 5,
   },
   buttonText: {
     fontWeight: 'bold',
@@ -167,8 +170,7 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: '#007BFF',
     textAlign: 'center',
-    marginTop: 20,
-    marginVertical: 10,
+    margin: 10,
     textDecorationLine: 'underline',
   },
 });

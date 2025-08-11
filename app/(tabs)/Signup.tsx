@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { View, Image, Text, TextInput, TouchableOpacity, StyleSheet, Alert, useColorScheme } from 'react-native';
 import { supabase } from '@/lib/supabase';
+import { registerForPushNotificationsAsync } from '@/utils/notifications';
+import { useUserContext } from '@/components/UserContext';
 import { useNavigation } from 'expo-router';
 import { BackHandler } from 'react-native';
 
@@ -18,10 +20,12 @@ const SignupPage: React.FC = () => {
   const textColor = DarkMode ? '#fff' : '#000';
   const backgroundColor = DarkMode ? '#626262' : '#C7C7C7';
   const SecondaryBackgroundColor = DarkMode ? '#7F8487' : '#B2B2B2';
-  const TertiaryBackgroundColor = DarkMode ? '#929292' : '#E7E7E7';
+  const TertiaryBackgroundColor = DarkMode ? '#828282' : '#E7E7E7';
   const inputColor = DarkMode ? '#A7A7A7' : '#E7E7E7';
   const buttonColor = DarkMode ? '#333' : '#007BFF';
   const buttonTextColor = DarkMode ? '#fff' : '#fff';
+
+  const { clearUserData } = useUserContext();
 
   const handleSignup = async () => {
     if(name === '' || username === '' || email === '' || password === ''){
@@ -52,10 +56,26 @@ const SignupPage: React.FC = () => {
             skillsRequired: skillsrequired,
           });
           if (insertError) throw insertError;
-          console.log('User data saved:', insertData);
-          navigation.navigate('Login');    
+          console.log('User data saved:', insertData);  
         } catch (insertError: any) {
           Alert.alert('Error', insertError.message);
+        }
+        try {
+          const { error } = await supabase.auth.signInWithPassword({ email, password });
+          if (error) throw error;
+          //Alert.alert('Success', 'You have logged in!');
+          //fetchSessionAndUserData();
+          // // const token = await registerForPushNotificationsAsync();
+          // // if (token) {
+          // //   await supabase
+          // //     .from('profiles')
+          // //     .upsert({ expo_token: token })
+          // //     .eq('authid', userdata?.user?.id);
+          // // }
+          navigation.navigate('Home');
+        } catch (error: any) {
+          Alert.alert('Error', error.message);
+          clearUserData();
         }
       } catch (error: any) {
         Alert.alert('Error', error.message);
@@ -78,6 +98,7 @@ const SignupPage: React.FC = () => {
 
   return (
     <View style={[styles.container, {backgroundColor: backgroundColor}]}>
+      <View style={styles.content}>
       <Text style={[styles.title, {color: textColor}]}>Sign Up</Text>
       <Image source={require('../logo.png')} style={styles.logo} />
       <View style = {styles.fields}>
@@ -129,6 +150,7 @@ const SignupPage: React.FC = () => {
       <TouchableOpacity onPress={() => navigation.navigate('Login')}>
         <Text style={styles.linkText}>Already have an account? Login</Text>
       </TouchableOpacity>
+      </View>
     </View>
   );
 };
@@ -138,16 +160,24 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center', 
     alignItems: 'center', 
-    padding: 10, 
+    //padding: 10, 
   },
-  title: { 
+  content: { 
+    flex: 0.8,
+    width: '100%',
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: 30,
+  },
+  title: {
     fontSize: 40, 
     fontWeight: 'bold', 
-    marginBottom: 10 
+    //marginBottom: 10 
   },
   fields: {
     width: '100%',
-    marginVertical: 20,
+    //height: '35%',
+    //marginVertical: 20,
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -161,6 +191,7 @@ const styles = StyleSheet.create({
   },
   button: { 
     width: '25%', 
+    height: 40,
     padding: 10, 
     borderRadius: 8, 
     alignItems: 'center', 
@@ -170,16 +201,17 @@ const styles = StyleSheet.create({
     fontWeight: 'bold' 
   },
   logo: {
-    width: 300,
-    height: 300,
+    width: '75%',
+    height: 'auto',
+    aspectRatio: 1,
     marginBottom: 0,
   },
   linkText: {
     fontSize: 16,
-    color: '#007BFF',
+    color: 'blue',
     textAlign: 'center',
-    marginTop: 20,
-    marginVertical: 10,
+    //marginTop: 20,
+    marginVertical: 15,
     textDecorationLine: 'underline',
   },
 });

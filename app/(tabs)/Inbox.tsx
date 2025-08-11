@@ -5,6 +5,7 @@ import { supabase } from '@/lib/supabase';
 import { useNavigation } from 'expo-router';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useUserContext } from '@/components/UserContext';
+//import { useMessageNotification } from '@/hooks/useMessageNotification';
 import iconSet from '@expo/vector-icons/build/Fontisto';
 import { FontAwesome } from '@expo/vector-icons';
 
@@ -17,7 +18,7 @@ export default function Inbox() {
   const textColor = DarkMode ? '#fff' : '#000';
   const backgroundColor = DarkMode ? '#626262' : '#C7C7C7';
   const SecondaryBackgroundColor = DarkMode ? '#7F8487' : '#B2B2B2';
-  const TertiaryBackgroundColor = DarkMode ? '#929292' : '#E7E7E7';
+  const TertiaryBackgroundColor = DarkMode ? '#828282' : '#E7E7E7';
   const inputColor = DarkMode ? '#A7A7A7' : '#E7E7E7';
   const buttonColor = DarkMode ? '#333' : '#007BFF';
   const buttonTextColor = DarkMode ? '#fff' : '#fff';
@@ -128,6 +129,8 @@ export default function Inbox() {
       supabase.removeChannel(channel);
     };
   }, [userData?.id]);
+
+  //useMessageNotification();
 
   const renderItem = ({ item }) => {
     const partnerId = getChatPartner(item);
@@ -251,7 +254,7 @@ const styles = StyleSheet.create({
     width: '100%',
     justifyContent: 'center',
     alignItems: 'center',
-    padding: 20,
+    padding: 10,
     flexGrow: 1,
   },
   chatCard: {
@@ -269,7 +272,7 @@ const styles = StyleSheet.create({
   },
   flatlist: {
     width: '100%',  
-    padding: 20,
+    padding: 10,
   },
   name: { 
     fontSize: 16, 

@@ -22,7 +22,7 @@ export default function EditProfile(){
   const textColor = DarkMode ? '#fff' : '#000';
   const backgroundColor = DarkMode ? '#626262' : '#C7C7C7';
   const SecondaryBackgroundColor = DarkMode ? '#7F8487' : '#B2B2B2';
-  const TertiaryBackgroundColor = DarkMode ? '#929292' : '#E7E7E7';
+  const TertiaryBackgroundColor = DarkMode ? '#828282' : '#E7E7E7';
   const inputColor = DarkMode ? '#A7A7A7' : '#E7E7E7';
   const buttonColor = DarkMode ? '#333' : '#007BFF';
   const buttonTextColor = DarkMode ? '#fff' : '#fff';
@@ -173,70 +173,98 @@ export default function EditProfile(){
 
     return () => backHandler.remove(); // Cleanup
   }, [navigation]);
+
+   useEffect(() => {
+      if (!userData?.id) return;
+  
+      const channel = supabase.channel('EditProfileChannel');
+  
+      channel.on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'profiles',
+          filter: `id=eq.${userData?.id}`,
+        },
+        (payload) => {
+          console.log('Profile updated:', payload.new);
+          // Fetch the updated user data
+          fetchSessionAndUserData();
+        }
+      );
+  
+      channel.subscribe();
+  
+      return () => {
+        supabase.removeChannel(channel);
+      };
+    }, [userData?.id]);
   
   console.log('Edit Profile rendered');
 
   return(
     <View style= {[styles.container, {backgroundColor: backgroundColor}]}>
-      <Image source= {selectedImage? {uri: selectedImage } : userData?.avatar_url? {uri: userData?.avatar_url } : require('../Avatar.png')} style= {[styles.logo, {marginTop: 10,}]}></Image>
-      <TouchableOpacity style={[styles.button, {backgroundColor: buttonColor}]} onPress={changePic}>
-          <Text style={[styles.buttonText, {color: buttonTextColor}]}>Change picture</Text>
-      </TouchableOpacity>
-      <View style = {[styles.fields, {backgroundColor: backgroundColor}]}>
-        <TextInput
-          style={[styles.input, {backgroundColor: inputColor}]}
-          placeholder={'Name: ' + userData?.name}
-          value={name}
-          onChangeText={setName}
-          autoCapitalize="none"
-        />
-        <TextInput
-          style={[styles.input, {backgroundColor: inputColor}]}
-          placeholder={'Username: @' + userData?.username}
-          value={username}
-          onChangeText={setUserName}
-          autoCapitalize="none"
-        />
-        <TextInput
-          style={[styles.input, {backgroundColor: inputColor}]}
-          placeholder={'Email: ' + userData?.email}
-          value={email}
-          onChangeText={setEmail}
-          keyboardType="email-address"
-          autoCapitalize="none"
-        />
-        <TextInput
-          style={[styles.input, {backgroundColor: inputColor}]}
-          placeholder={'Description: ' + userData?.description}
-          value={description}
-          onChangeText={setDescription}
-          autoCapitalize="none"
-        />
-        <TextInput
-          style={[styles.input, {backgroundColor: inputColor}]}
-          placeholder={'Skills Offered: ' + userData?.skillsOffered}
-          value={skillsoffered}
-          onChangeText={setSkillsOff}
-          autoCapitalize="none"
-        />
-        <TextInput
-          style={[styles.input, {backgroundColor: inputColor}]}
-          placeholder={'Skills Required: ' + userData?.skillsRequired}
-          value={skillsrequired}
-          onChangeText={setSkillsReq}
-          autoCapitalize="none"
-        />
+      <View style= {styles.content}>
+        <Image source= {selectedImage? {uri: selectedImage } : userData?.avatar_url? {uri: userData?.avatar_url } : require('../Avatar.png')} style= {[styles.avatar, {marginTop: 10,}]}></Image>
+        <TouchableOpacity style={[styles.button, {backgroundColor: buttonColor}]} onPress={changePic}>
+            <Text style={[styles.buttonText, {color: buttonTextColor}]}>Change picture</Text>
+        </TouchableOpacity>
+        <View style = {[styles.fields, {backgroundColor: backgroundColor}]}>
+          <TextInput
+            style={[styles.input, {backgroundColor: inputColor}]}
+            placeholder={'Name: ' + userData?.name}
+            value={name}
+            onChangeText={setName}
+            autoCapitalize="none"
+          />
+          <TextInput
+            style={[styles.input, {backgroundColor: inputColor}]}
+            placeholder={'Username: @' + userData?.username}
+            value={username}
+            onChangeText={setUserName}
+            autoCapitalize="none"
+          />
+          <TextInput
+            style={[styles.input, {backgroundColor: inputColor}]}
+            placeholder={'Email: ' + userData?.email}
+            value={email}
+            onChangeText={setEmail}
+            keyboardType="email-address"
+            autoCapitalize="none"
+          />
+          <TextInput
+            style={[styles.input, {backgroundColor: inputColor}]}
+            placeholder={'Description: ' + userData?.description}
+            value={description}
+            onChangeText={setDescription}
+            autoCapitalize="none"
+          />
+          <TextInput
+            style={[styles.input, {backgroundColor: inputColor}]}
+            placeholder={'Skills Offered: ' + userData?.skillsOffered}
+            value={skillsoffered}
+            onChangeText={setSkillsOff}
+            autoCapitalize="none"
+          />
+          <TextInput
+            style={[styles.input, {backgroundColor: inputColor}]}
+            placeholder={'Skills Required: ' + userData?.skillsRequired}
+            value={skillsrequired}
+            onChangeText={setSkillsReq}
+            autoCapitalize="none"
+          />
+        </View>
+        <TouchableOpacity style={[styles.button, { backgroundColor: buttonColor,}]} onPress={save}>
+            <Text style={[styles.buttonText, {color: buttonTextColor}]}>Save</Text>
+        </TouchableOpacity>
+        <TouchableOpacity style={[styles.button, { backgroundColor: buttonColor,}]} onPress={() => navigation.navigate('Profile')}>
+            <Text style={[styles.buttonText, {color: buttonTextColor}]}>Cancel</Text>
+        </TouchableOpacity>
+        <TouchableOpacity style={[styles.button, {backgroundColor: buttonColor}]} onPress={resetPassword}>
+            <Text style={[styles.buttonText, {color: buttonTextColor}]}>Reset password</Text>
+        </TouchableOpacity>
       </View>
-      <TouchableOpacity style={[styles.button, { backgroundColor: buttonColor,}]} onPress={save}>
-          <Text style={[styles.buttonText, {color: buttonTextColor}]}>Save</Text>
-      </TouchableOpacity>
-      <TouchableOpacity style={[styles.button, { backgroundColor: buttonColor,}]} onPress={() => navigation.navigate('Profile')}>
-          <Text style={[styles.buttonText, {color: buttonTextColor}]}>Cancel</Text>
-      </TouchableOpacity>
-      <TouchableOpacity style={[styles.button, {marginTop: 20, backgroundColor: buttonColor}]} onPress={resetPassword}>
-          <Text style={[styles.buttonText, {color: buttonTextColor}]}>Reset password</Text>
-      </TouchableOpacity>
-
     </View>
 
   );
@@ -244,51 +272,59 @@ export default function EditProfile(){
 }
 
 const styles = StyleSheet.create({
-    container:{
-        flex: 1,
-        alignContent: 'center',
-        justifyContent: 'center',
-        alignItems: 'center',
-        padding: 20,
-    },
-    content:{
-        flex: 0.8,
-        justifyContent: 'center',
-        alignContent: 'center',
-        textAlign: 'left',
-    },
-    title: {
-        fontSize: 20,
-        fontWeight: 'bold',
-        marginBottom: 5,
-      },
-    fields: {
-        width: '100%',
-        padding: 20,
-        justifyContent: 'center',
-        alignItems: 'center',
-      },
-    button: {
-        minWidth: '25%',
-        padding: 10,
-        borderRadius: 8,
-        alignItems: 'center',
-        margin: 10,
-      },
-    buttonText: {
-        fontWeight: 'bold',
-      },
-    logo: {
-        width: 225,
-        height: 225,
-      },
-    input: { 
-        width: '100%', 
-        height: 40, 
-        padding: 10, 
-        borderWidth: 1, 
-        borderColor: '#ccc', 
-        borderRadius: 8, 
-        marginBottom: 10, 
-      },
+  container:{
+      flex: 1,
+      alignContent: 'center',
+      justifyContent: 'center',
+      alignItems: 'center',
+      padding: 20,
+  },
+  content:{
+      flex: 0.8,
+      padding: 30,
+      width: '100%',
+      justifyContent: 'center',
+      alignContent: 'center',
+      alignItems: 'center',
+      //textAlign: 'left',
+  },
+  title: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    marginBottom: 5,
+  },
+  fields: {
+    width: '100%',
+    //height: '45%',
+    //paddingHorizontal: 20,
+    marginTop: 10,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  button: {
+    minWidth: '30%',
+    height: 40,
+    padding: 10,
+    borderRadius: 8,
+    alignItems: 'center',
+    margin: 5,
+  },
+  buttonText: {
+    fontWeight: 'bold',
+  },
+  avatar: {
+    width: '60%',
+    height: 'auto',
+    aspectRatio: 1,
+    marginBottom: 5,
+  },
+  input: { 
+    width: '100%',
+    height: 40, 
+    padding: 10, 
+    borderWidth: 1, 
+    borderColor: '#ccc', 
+    borderRadius: 8, 
+    marginBottom: 10, 
+  },
 })

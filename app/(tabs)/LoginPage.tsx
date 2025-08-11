@@ -2,8 +2,10 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { useUserContext } from '@/components/UserContext';
 import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert, Image, useColorScheme } from 'react-native';
 import { supabase } from '@/lib/supabase';
+import { registerForPushNotificationsAsync } from '@/utils/notifications';
 import { useNavigation } from 'expo-router';
 import { useIsFocused } from '@react-navigation/native';
+import { FontAwesome } from '@expo/vector-icons';
 
 const LoginPage: React.FC = () => {
   const [email, setEmail] = useState('');
@@ -15,12 +17,12 @@ const LoginPage: React.FC = () => {
   const textColor = DarkMode ? '#fff' : '#000';
   const backgroundColor = DarkMode ? '#626262' : '#C7C7C7';
   const SecondaryBackgroundColor = DarkMode ? '#7F8487' : '#B2B2B2';
-  const TertiaryBackgroundColor = DarkMode ? '#929292' : '#E7E7E7';
+  const TertiaryBackgroundColor = DarkMode ? '#828282' : '#E7E7E7';
   const inputColor = DarkMode ? '#A7A7A7' : '#E7E7E7';
   const buttonColor = DarkMode ? '#333' : '#007BFF';
   const buttonTextColor = DarkMode ? '#fff' : '#fff';
 
-  const { session, fetchSessionAndUserData, clearUserData } = useUserContext();
+  const { userData, session, fetchSessionAndUserData, clearUserData } = useUserContext();
 
   const checkSession = async () => {
     if(isFocused){
@@ -57,8 +59,15 @@ const LoginPage: React.FC = () => {
     try {
       const { error } = await supabase.auth.signInWithPassword({ email, password });
       if (error) throw error;
-      Alert.alert('Success', 'You are logged in!');
+      Alert.alert('Success', 'You have logged in!');
       //fetchSessionAndUserData();
+      // // const token = await registerForPushNotificationsAsync();
+      // // if (token) {
+      // //   await supabase
+      // //     .from('profiles')
+      // //     .upsert({ expo_token: token })
+      // //     .eq('authid', userData.id);
+      // // }
       navigation.navigate('Home');
     } catch (error: any) {
       Alert.alert('Error', error.message);
@@ -66,37 +75,66 @@ const LoginPage: React.FC = () => {
     }
   };
 
+  // const handleGoogleLogin = async () => {
+  //   try {
+  //     const { error } = await supabase.auth.signInWithOAuth({ 
+  //       provider: 'google', 
+  //       options: {
+  //       redirectTo: 'skillswap://Home', // Custom URL scheme for deep linking
+  //     },
+  //    });
+  //     if (error) throw error;
+  //     //Alert.alert('Success', 'You are logged in!');
+  //   } catch (error: any) {
+  //     Alert.alert('Error', error.message);
+  //   }
+  // };
+
   console.log('Login rendered');
 
   return (
     <View style={[styles.container, {backgroundColor: backgroundColor}]}>
-      <Text style={[styles.title, {color: textColor}]}>Login</Text>
-      <Image source={require('../logo.png')} style={styles.logo} />
-      <TextInput
-        style={[styles.input, {backgroundColor: inputColor}]}
-        placeholder="Email"
-        value={email}
-        onChangeText={setEmail}
-        keyboardType="email-address"
-        autoCapitalize="none"
-      />
-      <TextInput
-        style={[styles.input, {backgroundColor: inputColor}]}
-        placeholder="Password"
-        value={password}
-        onChangeText={setPassword}
-        secureTextEntry
-      />
-      <TouchableOpacity style={[styles.button, {backgroundColor: buttonColor}]} onPress={handleLogin}>
-        <Text style={[styles.buttonText, {color: buttonTextColor}]}>Login</Text>
-      </TouchableOpacity>
+      <View style={styles.content}>
+        <Text style={[styles.title, {color: textColor}]}>Login</Text>
+        <Image source={require('../logo.png')} style={styles.logo} />
+        <TextInput
+          style={[styles.input, {backgroundColor: inputColor}]}
+          placeholder="Email"
+          value={email}
+          onChangeText={setEmail}
+          keyboardType="email-address"
+          autoCapitalize="none"
+        />
+        <TextInput
+          style={[styles.input, {backgroundColor: inputColor}]}
+          placeholder="Password"
+          value={password}
+          onChangeText={setPassword}
+          secureTextEntry
+        />
 
-      <TouchableOpacity onPress={() => navigation.navigate('ForgotPassword')}>
-        <Text style={styles.linkText}>Forgot Password?</Text>
-      </TouchableOpacity>
-      <TouchableOpacity onPress={() => navigation.navigate('Signup')}>
-        <Text style={styles.linkText}>Don't have an account? Sign up</Text>
-      </TouchableOpacity>
+        <TouchableOpacity onPress={() => navigation.navigate('ForgotPassword')}>
+          <Text style={styles.linkText}>Forgot Password?</Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity style={[styles.button, {backgroundColor: buttonColor}]} onPress={handleLogin}>
+          <Text style={[styles.buttonText, {color: buttonTextColor}]}>Login</Text>
+        </TouchableOpacity>
+
+        {/* <TouchableOpacity style={[styles.button, {flexDirection: 'row', backgroundColor: buttonColor, width: 'auto', alignItems: 'center'}]} onPress={handleGoogleLogin}>
+          <Text style={[styles.buttonText, {color: buttonTextColor}]}> Continue with Google </Text>
+          <FontAwesome name="google" size={24} color={buttonTextColor} style={{ marginLeft: 8 }} />
+        </TouchableOpacity> */}
+
+        <TouchableOpacity style={[styles.button, {backgroundColor: buttonColor}]} onPress={() => navigation.navigate('Signup')}>
+          <Text style={[styles.buttonText, {color: buttonTextColor}]}>Sign Up</Text>
+        </TouchableOpacity>
+
+        {/* <TouchableOpacity onPress={() => navigation.navigate('ForgotPassword')}>
+          <Text style={styles.linkText}>Don't have an account? Signup</Text>
+        </TouchableOpacity> */}
+
+      </View>
     </View>
   );
 };
@@ -108,9 +146,16 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     padding: 10,
   },
+  content: {
+    flex: 1,
+    width: '100%',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
   logo: {
-    width: 300,
-    height: 300,
+    width: '75%',
+    height: 'auto',
+    aspectRatio: 1,
     marginBottom: 20,
   },
   title: {
@@ -131,6 +176,7 @@ const styles = StyleSheet.create({
     padding: 10,
     borderRadius: 8,
     alignItems: 'center',
+    justifyContent: 'center',
     marginTop: 10,
   },
   googleButton: {
@@ -146,7 +192,7 @@ const styles = StyleSheet.create({
   },
   linkText: {
     fontSize: 16,
-    color: '#007BFF',
+    color: 'blue',
     textAlign: 'center',
     marginTop: 20,
     marginVertical: 10,

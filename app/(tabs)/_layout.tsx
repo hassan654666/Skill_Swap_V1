@@ -17,6 +17,7 @@ import Schedule from './Schedule';
 import Inbox from './Inbox';
 import ChatScreen from './ChatScreen';
 import Profile from './Profile';
+import UserProfile from './UserProfile';
 import EditProfile from './EditProfile';
 import FontAwesome from '@expo/vector-icons/FontAwesome';
 import { color } from '@rneui/themed/dist/config';
@@ -84,6 +85,7 @@ export default function TabLayout() {
           <Stack.Screen name="ForgotPassword" component={ForgotPassword} />
           <Stack.Screen name="Home" component={Home} />
           <Stack.Screen name="Profile" component={Profile} />
+          <Stack.Screen name="UserProfile" component={UserProfile} />
           <Stack.Screen name="EditProfile" component={EditProfile} />
           <Stack.Screen name="ResetPassword" component={ResetPassword} />
           <Stack.Screen name="SkillSwap" component={SkillSwap} />

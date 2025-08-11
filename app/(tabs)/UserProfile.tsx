@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { useUserContext } from '@/components/UserContext';
 import { View, Text, Image, Button, ScrollView, Alert, StyleSheet, TextInput, useColorScheme, TouchableOpacity, FlatList } from 'react-native';
 import { supabase } from '@/lib/supabase';
-import { useIsFocused } from '@react-navigation/native';
+import { useIsFocused, useRoute } from '@react-navigation/native';
 import { useNavigation } from 'expo-router';
 import { BackHandler } from 'react-native';
 import { color } from '@rneui/themed/dist/config';
@@ -23,7 +23,10 @@ export default function Profile(){
     const buttonColor = DarkMode ? '#333' : '#007BFF';
     const buttonTextColor = DarkMode ? '#fff' : '#fff';
     
-    const { session, userData, fetchSessionAndUserData, clearUserData } = useUserContext();
+    const { session, usersData, fetchSessionAndUserData, clearUserData } = useUserContext();
+    const route = useRoute();
+    const userId = (route.params as { userId?: string })?.userId;
+    // console.log('User ID from route:', userId);
 
     useEffect(() => {
       if(isFocused){
@@ -37,21 +40,12 @@ export default function Profile(){
       }
     }, [session]);
     
+    const userData = usersData?.find((users: any) =>
+    users?.id === userId
+    );
 
-    const handleLogout = async () => {
-      try {
-        clearUserData();
-        const { error } = await supabase.auth.signOut();
-        if (error) throw error;
-        navigation.navigate('Login');
-        Alert.alert('Success', 'You have been logged out.');
-      } catch (error: any) {
-        Alert.alert('Error', error.message);
-      }
-    };
-
-    function editProfile() {
-      navigation.navigate('EditProfile');
+    function MessageUser() {
+      navigation.navigate('ChatScreen', { receiverId: userId });
     }
 
   useEffect(() => {
@@ -65,34 +59,7 @@ export default function Profile(){
     return () => backHandler.remove(); 
   }, [navigation]);
 
-  useEffect(() => {
-    if (!userData?.id) return;
-
-    const channel = supabase.channel('ProfileChannel');
-
-    channel.on(
-      'postgres_changes',
-      {
-        event: '*',
-        schema: 'public',
-        table: 'profiles',
-        filter: `id=eq.${userData?.id}`,
-      },
-      (payload) => {
-        console.log('Profile updated:', payload.new);
-        // Fetch the updated user data
-        fetchSessionAndUserData();
-      }
-    );
-
-    channel.subscribe();
-
-    return () => {
-      supabase.removeChannel(channel);
-    };
-  }, [userData?.id]);
-
-  console.log('Profile rendered');
+  // console.log('User Profile rendered');
 
   return(
     <View style= {[styles.container, {backgroundColor: backgroundColor}]}>
@@ -101,16 +68,12 @@ export default function Profile(){
         <View style = {styles.userInfo}>
           <Text style= {[styles.title, {color: textColor}]}>Name: {userData?.name}</Text>
           <Text style= {[styles.title, {color: textColor}]}>Username: @{userData?.username}</Text>
-          <Text style= {[styles.title, {color: textColor}]}>Email: {userData?.email}</Text>
           <Text style= {[styles.title, {color: textColor}]}>Description: {userData?.description}</Text>
           <Text style= {[styles.title, {color: textColor}]}>Skills Offered: {userData?.skillsOffered}</Text>
           <Text style= {[styles.title, {color: textColor}]}>Skills Required: {userData?.skillsRequired}</Text>
         </View>
-        <TouchableOpacity style={[styles.button, {backgroundColor: buttonColor}]} onPress={editProfile}>
-            <Text style={[styles.buttonText, {color: buttonTextColor}]}>Edit profile</Text>
-        </TouchableOpacity>
-        <TouchableOpacity style={[styles.button, {backgroundColor: 'red',}]} onPress={handleLogout}>
-            <Text style={[styles.buttonText, {color: buttonTextColor}]}>Log Out</Text>
+        <TouchableOpacity style={[styles.button, {backgroundColor: buttonColor}]} onPress={MessageUser}>
+            <Text style={[styles.buttonText, {color: buttonTextColor}]}>Message</Text>
         </TouchableOpacity>
       </View>
     </View>

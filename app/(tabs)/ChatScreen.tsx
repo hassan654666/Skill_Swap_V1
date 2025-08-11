@@ -4,6 +4,7 @@ import { format, parseISO } from 'date-fns';
 import { useNavigation, useLocalSearchParams } from 'expo-router';
 import { useRoute } from '@react-navigation/native';
 import { useUserContext } from '@/components/UserContext';
+//import { useMessageNotification } from '@/hooks/useMessageNotification';
 import { supabase } from '@/lib/supabase';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { FontAwesome } from '@expo/vector-icons';
@@ -19,7 +20,7 @@ export default function ChatScreen() {
   const textColor = DarkMode ? '#fff' : '#000';
   const backgroundColor = DarkMode ? '#626262' : '#C7C7C7';
   const SecondaryBackgroundColor = DarkMode ? '#7F8487' : '#B2B2B2';
-  const TertiaryBackgroundColor = DarkMode ? '#929292' : '#E7E7E7';
+  const TertiaryBackgroundColor = DarkMode ? '#828282' : '#E7E7E7';
   const inputColor = DarkMode ? '#A7A7A7' : '#E7E7E7';
   const buttonColor = DarkMode ? '#333' : '#007BFF';
   const buttonTextColor = DarkMode ? '#fff' : '#fff';
@@ -178,6 +179,8 @@ export default function ChatScreen() {
       supabase.removeChannel(channel);
     };
   }, [senderId, receiverId]);
+
+  //useMessageNotification();
 
   useEffect(() => {
       const backAction = () => {

@@ -12,7 +12,7 @@ const ForgotPassword: React.FC = () => {
   const textColor = DarkMode ? '#fff' : '#000';
   const backgroundColor = DarkMode ? '#626262' : '#C7C7C7';
   const SecondaryBackgroundColor = DarkMode ? '#7F8487' : '#B2B2B2';
-  const TertiaryBackgroundColor = DarkMode ? '#929292' : '#E7E7E7';
+  const TertiaryBackgroundColor = DarkMode ? '#828282' : '#E7E7E7';
   const inputColor = DarkMode ? '#A7A7A7' : '#E7E7E7';
   const buttonColor = DarkMode ? '#333' : '#007BFF';
   const buttonTextColor = DarkMode ? '#fff' : '#fff';
@@ -95,7 +95,7 @@ const styles = StyleSheet.create({
     fontWeight: 'bold' 
   },
   linkText: { 
-    color: '#007BFF', 
+    color: 'blue', 
     textAlign: 'center', 
     marginTop: 40, 
     marginVertical: 10, 
