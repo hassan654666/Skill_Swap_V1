@@ -25,14 +25,19 @@ export default function Inbox() {
   const navigation = useNavigation<any>();
   const router = useRouter();
   const colorScheme = useColorScheme();
-  // const DarkMode = colorScheme === 'dark';
-  const textColor = DarkMode ? '#fff' : '#000';
-  const backgroundColor = DarkMode ? '#626262' : '#C7C7C7';
-  const SecondaryBackgroundColor = DarkMode ? '#7F8487' : '#B2B2B2';
-  const TertiaryBackgroundColor = DarkMode ? '#828282' : '#E7E7E7';
-  const inputColor = DarkMode ? '#A7A7A7' : '#E7E7E7';
-  const buttonColor = DarkMode ? '#333' : '#007BFF';
-  const buttonTextColor = DarkMode ? '#fff' : '#fff';
+
+  // 🎨 Color palette
+  const textColor = DarkMode ? "#fff" : "#000";
+  const backgroundColor = DarkMode ? "#1e1e1e" : "#ddddddff";
+  const SecondaryBackgroundColor = DarkMode ? "#2e2e2e" : "#bdbdbdff";
+  const TertiaryBackgroundColor = DarkMode ? "#484848ff" : "#ffffffff";
+  const inputColor = DarkMode ? "#6c6c6cff" : "#EAEAEA";
+  const buttonColor = DarkMode ? "#004187ff" : "#007BFF";
+  const redButton = DarkMode ? "#dc3545" : "#ff0000ff"
+  const linkTextColor = DarkMode ? "#007bffff" : "#0040ffff";
+  const buttonTextColor = "#fff";
+  const bubbleOneColor = DarkMode ? '#183B4E' : '#3D90D7';
+  const bubbleTwoColor = DarkMode ? '#015551' : '#1DCD9F';
 
   const CACHE_KEY = `chat_inbox_${userData.id}`;
 
@@ -297,7 +302,8 @@ export default function Inbox() {
     <View style={[styles.container, { backgroundColor: backgroundColor }]}>
       <View style= {[styles.topbar, {backgroundColor: SecondaryBackgroundColor}]}>
         <TouchableOpacity style= { {margin: 10, marginLeft: 15,} } onPress={() => navigation.navigate('Home')}>
-          <FontAwesome name="arrow-left" size={20} color={textColor} />
+          {/* <FontAwesome name="arrow-left" size={20} color={textColor} /> */}
+          <Text style={{fontSize: 20}}>     </Text>
         </TouchableOpacity>
         {!showSearch && (<Text style={[styles.title, {color: textColor, backgroundColor: SecondaryBackgroundColor}]}>Inbox</Text>)}
         {showSearch && (
@@ -356,19 +362,25 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   topbar: {
-    //flex: 0.082,
+    //flex: 0.08,
+    // position: 'absolute',
+    // top: 0,
     flexDirection: 'row',
     width: '100%',
     height: height * 0.06,
-    //height: 100,
-    //height: '9%',
+    //height: 60,
+    //marginBottom: '10%',
+    //height: '6.6%',
     //padding: 20,
     alignItems: 'center',
-    justifyContent: 'space-between',
-    //alignSelf: 'flex-start',
-    //flexGrow: 0.1,
+    justifyContent: 'space-between', 
+    // justifyContent: 'flex-end',
+    verticalAlign: 'top',
+    //gap: width * 0.34
+    //flexGrow: 1,
+    //flexShrink: 0,
   },
- input: {
+  input: {
     width: '50%',
     height: height * 0.04,
     //height: '100%',
@@ -384,7 +396,7 @@ const styles = StyleSheet.create({
     
   },
   title: {
-    fontSize: 24,
+    fontSize: 20,
     fontWeight: 'bold',
   },
   content:{
@@ -427,7 +439,7 @@ const styles = StyleSheet.create({
     color: 'white', 
     position: 'absolute', 
     right: 0, 
-    top: 5,
+    top: 0,
     backgroundColor: 'red'
   },
   preview: { 

@@ -8,14 +8,19 @@ import { useCallback } from 'react';
 export default function Loading() {
   const {loading, session, DarkMode} = useUserContext();
   const colorScheme = useColorScheme();
-  // const DarkMode = colorScheme === 'dark';
-  const textColor = DarkMode ? '#fff' : '#000';
-  const backgroundColor = DarkMode ? '#626262' : '#C7C7C7';
-  const SecondaryBackgroundColor = DarkMode ? '#7F8487' : '#B2B2B2';
-  const TertiaryBackgroundColor = DarkMode ? '#828282' : '#E7E7E7';
-  const inputColor = DarkMode ? '#A7A7A7' : '#E7E7E7';
-  const buttonColor = DarkMode ? '#333' : '#007BFF';
-  const buttonTextColor = DarkMode ? '#fff' : '#fff';
+
+  // 🎨 Color palette
+  const textColor = DarkMode ? "#fff" : "#000";
+  const backgroundColor = DarkMode ? "#1e1e1e" : "#ddddddff";
+  const SecondaryBackgroundColor = DarkMode ? "#2e2e2e" : "#bdbdbdff";
+  const TertiaryBackgroundColor = DarkMode ? "#484848ff" : "#ffffffff";
+  const inputColor = DarkMode ? "#6c6c6cff" : "#EAEAEA";
+  const buttonColor = DarkMode ? "#004187ff" : "#007BFF";
+  const redButton = DarkMode ? "#dc3545" : "#ff0000ff"
+  const linkTextColor = DarkMode ? "#007bffff" : "#0040ffff";
+  const buttonTextColor = "#fff";
+  const bubbleOneColor = DarkMode ? '#183B4E' : '#3D90D7';
+  const bubbleTwoColor = DarkMode ? '#015551' : '#1DCD9F';
 
   const router = useRouter();
 

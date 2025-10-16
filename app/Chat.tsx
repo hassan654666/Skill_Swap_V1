@@ -55,13 +55,15 @@ export default function Chat() {
   const router = useRouter();
   const colorScheme = useColorScheme();
   // const DarkMode = colorScheme === 'dark';
-  const textColor = DarkMode ? '#fff' : '#000';
-  const backgroundColor = DarkMode ? '#626262' : '#C7C7C7';
-  const SecondaryBackgroundColor = DarkMode ? '#7F8487' : '#B2B2B2';
-  const TertiaryBackgroundColor = DarkMode ? '#828282' : '#E7E7E7';
-  const inputColor = DarkMode ? '#A7A7A7' : '#E7E7E7';
-  const buttonColor = DarkMode ? '#333' : '#007BFF';
-  const buttonTextColor = DarkMode ? '#fff' : '#fff';
+  const textColor = DarkMode ? "#fff" : "#000";
+  const backgroundColor = DarkMode ? "#1e1e1e" : "#ddddddff";
+  const SecondaryBackgroundColor = DarkMode ? "#2e2e2e" : "#bdbdbdff";
+  const TertiaryBackgroundColor = DarkMode ? "#484848ff" : "#ffffffff";
+  const inputColor = DarkMode ? "#6c6c6cff" : "#EAEAEA";
+  const buttonColor = DarkMode ? "#004187ff" : "#007BFF";
+  const redButton = DarkMode ? "#dc3545" : "#ff0000ff"
+  const linkTextColor = DarkMode ? "#007bffff" : "#000dffff";
+  const buttonTextColor = "#fff";
   const bubbleOneColor = DarkMode ? '#183B4E' : '#3D90D7';
   const bubbleTwoColor = DarkMode ? '#015551' : '#1DCD9F';
   const flatListRef = useRef<any>();
@@ -111,7 +113,6 @@ export default function Chat() {
     setLoading(false);
   };
   
-
   const fetchChat = async () => {
     const { data: chatData, error: chatError } = await supabase
       .from('chat')
@@ -228,56 +229,6 @@ export default function Chat() {
     }
   };
 
-  // ✅ Confirm and send files
-  // const confirmSendFiles = async () => {
-  //   for (const file of selectedFiles) {
-  //     const fileName = `${Date.now()}_${file.name}`;
-  //     const localPath = `${FileSystem.documentDirectory}app_files/${fileName}`;
-  //     await FileSystem.makeDirectoryAsync(`${FileSystem.documentDirectory}app_files/`, { intermediates: true });
-  //     await FileSystem.copyAsync({ from: file.uri, to: localPath });
-
-  //     const remotePath = `files/${fileName}`;
-  //     const uriToUpload = (await FileSystem.getInfoAsync(localPath)).exists ? localPath : file.uri;
-  //     const base64 = await FileSystem.readAsStringAsync(uriToUpload, { encoding: FileSystem.EncodingType.Base64 });
-
-  //     // fetch the file (local file:// or content:// URIs should work in expo)
-  //     // const response = await fetch(uriToUpload);
-  //     // const blob = await response.blob();
-  //     // const arrayBuffer = await response.arrayBuffer();
-
-  //     // const fileToUpload: any = {
-  //     //   uri: file.uri,
-  //     //   name: file.name,
-  //     //   type: file.mimeType,
-  //     // }
-
-  //     // const fileToUpload2: any = {
-  //     //   uri: uriToUpload,
-  //     //   name: fileName,
-  //     //   type: file.mimeType,
-  //     // }
-
-  //     // const contentType = file.mimeType;
-  //     // console.log("Content Type: ", contentType);
-
-  //     const { data, error } = await supabase.storage
-  //       .from("chat_files")
-  //       .upload(remotePath, decode(base64), { contentType: file.mimeType, upsert: false});
-
-  //     if (!error) {
-  //       console.log("Uploading to supabase bucket");
-  //       const fileUrl = supabase.storage.from("chat_files").getPublicUrl(data.path).data.publicUrl;
-  //       await sendMessage(content, fileUrl, file.mimeType);
-  //     } else{
-  //       console.error("Error: ", error.message);
-  //     }
-    
-  //   }
-  //   setSelectedFiles([]);
-  //   setPreviewVisible(false);
-  //   setPreviewIndex(0);
-  // };
-
   // Confirm & send files (fixed)
   const confirmSendFiles = async () => {
     try {
@@ -345,53 +296,6 @@ export default function Chat() {
       console.error("recording error", err);
     }
   };
-
-  // const stopRecording = async () => {
-  //   if (!recording) return;
-  //   await recording.stopAndUnloadAsync();
-  //   const uri = recording.getURI();
-  //   const fileName = `${Date.now()}.m4a`;
-  //   const localPath = `${FileSystem.documentDirectory}app_audio/${fileName}`;
-  //   await FileSystem.makeDirectoryAsync(`${FileSystem.documentDirectory}app_audio/`, { intermediates: true });
-  //   await FileSystem.copyAsync({ from: uri!, to: localPath });
-
-  //   const remotePath = `voice/${fileName}`;
-  //   const uriToUpload: any = (await FileSystem.getInfoAsync(localPath)).exists ? localPath : uri;
-  //   const base64 = await FileSystem.readAsStringAsync(uriToUpload, { encoding: FileSystem.EncodingType.Base64 });
-
-  //   // fetch the file (local file:// or content:// URIs should work in expo)
-  //   // const response = await fetch(uriToUpload);
-  //   // const blob = await response.blob();
-  //   // const arrayBuffer = await response.arrayBuffer();
-
-  //   // const fileToUpload: any = {
-  //   //   uri: uriToUpload,
-  //   //   name: fileName,
-  //   //   type: 'audio/m4a',
-  //   // }
-
-  //   // // Create file object similar to document picker
-  //   // const audioFile: any = {
-  //   //   uri: uri,
-  //   //   name: fileName,
-  //   //   mimeType: 'audio/m4a'
-  //   // };
-
-  //   const contentType = 'audio/m4a';
-
-  //   const { data, error } = await supabase.storage
-  //     .from("chat_files")
-  //     .upload(remotePath, decode(base64), { contentType: contentType, upsert: false});
-
-  //   if (!error) {
-  //     console.log("Uploading to supabase bucket");
-  //     const fileUrl = supabase.storage.from("chat_files").getPublicUrl(data.path).data.publicUrl;
-  //     await sendMessage("", fileUrl, "audio/m4a");
-  //   } else{
-  //     console.error("Error: ", error.message);
-  //   }
-  //   setRecording(null);
-  // };
 
   // stopRecording fixed
   const stopRecording = async () => {
@@ -495,7 +399,7 @@ export default function Chat() {
     }
 
     let result = await ImagePicker.launchCameraAsync({
-      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      mediaTypes: ImagePicker.MediaTypeOptions.All,
       quality: 1,
     });
 
@@ -611,19 +515,8 @@ export default function Chat() {
     exitSelection();
   };
 
-  // ✅ Delete icon tap — open modal
-  const handleDeletePress = () => {
-    if (selectedMessages.length === 0) return;
-    const myMsg = messages.find(
-      (m: any) =>
-        selectedMessages.includes(m?.id) && m.sender_id === userData?.id
-    );
-    setDeleteTargetMine(!!myMsg);
-    setDeleteModalVisible(true);
-  };
-
-  // ✅ Delete for me (uses RPC)
-  const deleteForMe = async () => {
+  // ✅ Delete messages
+  const deleteMsg = async () => {
     try {
     for (const id of selectedMessages) {
       const { data: msg, error: fetchErr } = await supabase
@@ -641,9 +534,17 @@ export default function Chat() {
       const { error } = await supabase
         .from('Messages')
         .update({ deleted_for: updatedDeletedFor })
-        .eq('id', id);
+        .eq('id', id)
+        .eq('sender_id', receiverId);
 
       if (error) throw error;
+
+      const { error: myMsgErr} = await supabase
+        .from('Messages')
+        .delete()
+        .eq('id', id).eq('sender_id', senderId);
+
+      if (myMsgErr) throw myMsgErr;
     }
       setDeleteModalVisible(false);
       exitSelection();
@@ -653,36 +554,17 @@ export default function Chat() {
     }
   };
 
-  // ✅ Delete for all (only my messages)
-  const deleteForAll = async () => {
-    try {
-      for (const id of selectedMessages) {
-        // Find the file path from the message
-        const message = messages.find((m: any) => m?.id === id);
-        if (message && message.file_url) {
-          // Extract the file path from the public URL
-          const fileUrlParts = message.file_url.split("/chat_files/");
-          const filePath = fileUrlParts.length > 1 ? `files/${fileUrlParts[1]}` : null;
-          if (filePath) {
-            const { error: removeError } = await supabase.storage.from("chat_files").remove([filePath]);
-            if (removeError) console.error("Error removing file from storage:", removeError.message);
-          }
-        }
-        const { error } = await supabase.from("Messages").delete().eq("id", id);
-        if (error) throw error;
-      }
-      setDeleteModalVisible(false);
-      exitSelection();
-      fetchMessages();
-    } catch (err: any) {
-      Alert.alert("Error", err.message);
-    }
-  };
-
-  // ✅ Confirm delete for received message
-  const confirmDeleteOther = async () => {
-    await deleteForMe();
-    setDeleteModalVisible(false);
+  const showDeleteAlert = () => {
+    if (selectedMessages.length === 0) return;
+    Alert.alert(
+      "Delete Messages",
+      "Delete selected messages?",
+      [
+        { text: "Cancel", style: "cancel" },
+        { text: "Confirm", onPress: deleteMsg, style: "destructive" },
+      ],
+      { cancelable: true }
+    );
   };
 
     const backAction = () => {
@@ -763,20 +645,13 @@ export default function Chat() {
                 </TouchableOpacity>
               </>
             )}
-            <TouchableOpacity onPress={handleDeletePress}>
+            <TouchableOpacity onPress={showDeleteAlert}>
               <FontAwesome name="trash" size={24} style={{color: textColor}} />
             </TouchableOpacity>
           </View>
         </View>
       )}
 
-
-      {/* <View style={{height: '12%', width: '80%'}}>
-        <Text style={{color: textColor}}>"Current Path: {pathname}"</Text>
-        <Text style={{color: textColor}}>"currentChatId: {currentChatId}"</Text>
-        <Text style={{color: textColor}}>"currentReceiverId: {currentReceiverId}"</Text>
-      </View>
-      <Image source={require('./Avatar.png')} style={styles.avatar} resizeMode='cover'></Image> */}
       <View style= {[styles.content, {backgroundColor: backgroundColor}]}>
         {loading ? (
           <ActivityIndicator size="large" />
@@ -816,11 +691,17 @@ export default function Chat() {
                   activeOpacity={0.7}
                   style={[styles.replyPreview, {backgroundColor: TertiaryBackgroundColor, borderLeftColor: mine ? bubbleOneColor : bubbleTwoColor}]}
                 >
-                   {repliedMessage?.file_type?.startsWith("image/") && (
-                <TouchableOpacity onPress={() => { setPreviewUri(repliedMessage.file_url); setPreviewVisible(true); }}>
-                  <Image source={{ uri: repliedMessage.file_url }} style={{ width: 150, height: 150, borderRadius: 8 }} />
-                  {/* <Text>{repliedMessage.text}</Text> */}
-                </TouchableOpacity>
+                  {repliedMessage?.file_type?.startsWith("image/") && (
+                  <TouchableOpacity onPress={() => { setPreviewUri(repliedMessage.file_url); setPreviewVisible(true); }}>
+                    <Image source={{ uri: repliedMessage.file_url }} style={{ width: 150, height: 150, borderRadius: 8 }} />
+                    {/* <Text>{repliedMessage.text}</Text> */}
+                  </TouchableOpacity>
+                  )}
+                  {repliedMessage?.file_type?.startsWith("video/") && (
+                  <TouchableOpacity onPress={() => { setPreviewUri(repliedMessage.file_url); setPreviewVisible(true); }}>
+                    <Image source={{ uri: repliedMessage.file_url }} style={{ width: 150, height: 150, borderRadius: 8 }} />
+                    {/* <Text>{repliedMessage.text}</Text> */}
+                  </TouchableOpacity>
                   )}
                   {repliedMessage?.file_type?.startsWith("audio/") && (
                     <TouchableOpacity onPress={() => playAudio(repliedMessage.file_url)}>
@@ -843,12 +724,18 @@ export default function Chat() {
                   {/* <Text>{item.text}</Text> */}
                 </TouchableOpacity>
               )}
+              {item.file_type?.startsWith("video/") && (
+                <TouchableOpacity onPress={() => { setPreviewUri(item.file_url); setPreviewVisible(true); setSelectedFiles([{ uri: item.file_url, name: getFileNameFromUri(item.file_url), mimeType: item.file_type }]); setPreviewIndex(0); }}>
+                  <Image source={{ uri: item.file_url }} style={{ width: 150, height: 150, borderRadius: 8 }} />
+                  {/* <Text>{item.text}</Text> */}
+                </TouchableOpacity>
+              )}
               {item.file_type?.startsWith("audio/") && (
                 <TouchableOpacity onPress={() => playAudio(item.file_url)}>
                   <FontAwesome name="play" size={24} style={{color: textColor}} />
                 </TouchableOpacity>
               )}
-              {item.file_type && !item.file_type.startsWith("image/") && !item.file_type.startsWith("audio/") && (
+              {item.file_type && !item.file_type.startsWith("image/") && !item.file_type.startsWith("audio/") && !item.file_type.startsWith("video/") && (
                 <TouchableOpacity onPress={() => openFile(item.file_url)}>
                   <FontAwesome name="file" size={24} style={{color: textColor}} />
                   {/* <Text>{item.text || "Open File"}</Text> */}
@@ -877,65 +764,6 @@ export default function Chat() {
         )}
       </View>
 
-      {/* ✅ Delete Modal */}
-      <Modal
-        visible={deleteModalVisible}
-        transparent
-        animationType="fade"
-        onRequestClose={() => setDeleteModalVisible(false)}
-      >
-        <View style={styles.modalOverlay}>
-          <View style={styles.modalBox}>
-            {/* {deleteTargetMine ? (
-              <>
-                <TouchableOpacity
-                  style={styles.modalBtn}
-                  onPress={deleteForMe}
-                >
-                  <Text style={styles.modalText}>Delete for me</Text>
-                </TouchableOpacity>
-                <TouchableOpacity
-                  style={styles.modalBtn}
-                  onPress={deleteForAll}
-                >
-                  <Text style={[styles.modalText, { color: "#ff4444" }]}>
-                    Delete for all
-                  </Text>
-                </TouchableOpacity>
-                <TouchableOpacity
-                  style={styles.modalBtn}
-                  onPress={() => setDeleteModalVisible(false)}
-                >
-                  <Text style={[styles.modalText, { color: "#007AFF" }]}>
-                    Cancel
-                  </Text>
-                </TouchableOpacity>
-              </>
-            ) : ( */}
-              <>
-                <Text style={{ fontSize: 16, marginBottom: 15 }}>
-                  Delete selected messages?
-                </Text>
-                <View style={{ flexDirection: "row", justifyContent: "space-between" }}>
-                  <TouchableOpacity
-                    onPress={confirmDeleteOther}
-                    style={styles.confirmBtn}
-                  >
-                    <Text style={{ color: "#fff" }}>Confirm</Text>
-                  </TouchableOpacity>
-                  <TouchableOpacity
-                    onPress={() => setDeleteModalVisible(false)}
-                    style={[styles.confirmBtn, { backgroundColor: "#999" }]}
-                  >
-                    <Text style={{ color: "#fff" }}>Cancel</Text>
-                  </TouchableOpacity>
-                </View>
-              </>
-            {/* )} */}
-          </View>
-        </View>
-      </Modal>
-
       {selectedFiles.length > 0 && (
         <Modal visible={previewVisible} transparent={true} animationType="fade">
           <View style={{ flex: 1, flexDirection: "column", backgroundColor: "rgba(0,0,0,0.9)", alignItems: "center", justifyContent: 'center', paddingTop: 40, paddingBottom: 20 }}>
@@ -948,7 +776,7 @@ export default function Chat() {
             </TouchableOpacity> */}
 
             {/* MAIN PREVIEW */}
-            <View style={{ width: width * 0.95, height: height * 0.6, justifyContent: 'center', alignItems: 'center' }}>
+            <View style={{ width: width * 1, height: height * 0.6, justifyContent: 'center', alignItems: 'center' }}>
               {selectedFiles[previewIndex]?.mimeType?.startsWith("image/") ? (
                 <>
                   <Image

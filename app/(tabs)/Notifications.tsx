@@ -1,9 +1,11 @@
 import React, { useCallback, useEffect, useState } from "react";
-import { View, Text, StyleSheet, FlatList, TouchableOpacity, useColorScheme, Alert, BackHandler } from "react-native";
+import { View, Text, StyleSheet, FlatList, TouchableOpacity, useColorScheme, Alert, BackHandler, Dimensions } from "react-native";
 import { FontAwesome } from "@expo/vector-icons";
 import { useFocusEffect, useRouter, useNavigation } from "expo-router";
 import { useUserContext } from "@/components/UserContext";
 import { supabase } from "@/lib/supabase";
+
+const { width, height } = Dimensions.get("window");
 
 export default function Notifications() {
   const { userData, DarkMode, session } = useUserContext();
@@ -11,11 +13,18 @@ export default function Notifications() {
   const router = useRouter();
   const colorScheme = useColorScheme();
 
+  // 🎨 Color palette
   const textColor = DarkMode ? "#fff" : "#000";
-  const backgroundColor = DarkMode ? "#626262" : "#C7C7C7";
-  const SecondaryBackgroundColor = DarkMode ? "#7F8487" : "#B2B2B2";
-  const buttonColor = DarkMode ? "#333" : "#007BFF";
+  const backgroundColor = DarkMode ? "#1e1e1e" : "#ddddddff";
+  const SecondaryBackgroundColor = DarkMode ? "#2e2e2e" : "#bdbdbdff";
+  const TertiaryBackgroundColor = DarkMode ? "#484848ff" : "#ffffffff";
+  const inputColor = DarkMode ? "#6c6c6cff" : "#EAEAEA";
+  const buttonColor = DarkMode ? "#004187ff" : "#007BFF";
+  const redButton = DarkMode ? "#dc3545" : "#ff0000ff"
+  const linkTextColor = DarkMode ? "#007bffff" : "#0040ffff";
   const buttonTextColor = "#fff";
+  const bubbleOneColor = DarkMode ? '#183B4E' : '#3D90D7';
+  const bubbleTwoColor = DarkMode ? '#015551' : '#1DCD9F';
 
   const [notifications, setNotifications] = useState<any[]>([]);
 
@@ -35,23 +44,43 @@ export default function Notifications() {
 
   useEffect(() => {
     fetchNotifications();
-  }, [session]);
+     const chatChannel = supabase
+      .channel('notification')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'notifications',
+          filter: `user_id=eq.${userData?.id}`,
+        },
+        (payload) => {
+          if(!payload.new) return;
+          fetchNotifications();
+        }
+      )
+      .subscribe();
 
-//   const handleNotificationPress = (item: any) => {
-//     if (item.type === "meeting_request") {
-//       router.push({
-//         pathname: '/MeetingDetails',
-//         params: { meetingId: item.meeting_id },
-//       });
-//     } else if (item.type === "meeting_link") {
-//       router.push({
-//         pathname: '/Chat',
-//         params: { receiverId: item.sender_id },
-//       });
-//     } else {
-//       Alert.alert("Notification", item.message);
-//     }
-//   };
+    return () => {
+      supabase.removeChannel(chatChannel);
+    };
+  }, [userData?.id]);
+
+  const handleNotificationPress = (item: any) => {
+    if ((item.type === "meeting_request" && item.read === false) || (item.type === "reschedule" && item.read === false)) {
+      router.push({
+        pathname: '/Request',
+        params: { meetingId: item.meeting_id },
+      });
+    } else if (item.type === "meeting_link") {
+      router.push({
+        pathname: '/Chat',
+        params: { receiverId: item.sender_id },
+      });
+    } else {
+      Alert.alert("You have already handled this request");
+    }
+  };
 
     const backAction = () => {
         navigation.navigate('Home');
@@ -69,7 +98,7 @@ export default function Notifications() {
   const renderItem = ({ item }: { item: any }) => (
     <TouchableOpacity
       style={[styles.notificationItem, { backgroundColor: SecondaryBackgroundColor }]}
-    //   onPress={() => handleNotificationPress(item)}
+      onPress={() => handleNotificationPress(item)}
     >
       <FontAwesome name="bell" size={20} color={buttonColor} style={{ marginRight: 10 }} />
       <View style={{ flex: 1 }}>
@@ -84,10 +113,10 @@ export default function Notifications() {
 
   return (
     <View style={[styles.container, { backgroundColor }]}>
-      <View style={[styles.topbar, { backgroundColor }]}>
-        <TouchableOpacity style={{ margin: 10, marginLeft: 15 }} onPress={backAction}>
+      <View style={[styles.topbar, { backgroundColor: SecondaryBackgroundColor }]}>
+        {/* <TouchableOpacity style={{ margin: 10, marginLeft: 15 }} onPress={backAction}>
           <FontAwesome name="arrow-left" size={20} color={textColor} />
-        </TouchableOpacity>
+        </TouchableOpacity> */}
         <Text style={[styles.headerText, { color: textColor }]}>Notifications</Text>
       </View>
 
@@ -98,6 +127,7 @@ export default function Notifications() {
         </View>
       ) : (
         <FlatList
+          style={{ width: '100%' }}
           data={notifications}
           renderItem={renderItem}
           keyExtractor={(item) => item.id}
@@ -114,12 +144,14 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   topbar: {
-    position: "absolute",
-    top: 0,
+    // position: "absolute",
+    // top: 0,
     flexDirection: "row",
     width: "100%",
-    height: 60,
+    height: height * 0.06,
+    //gap: width * 0.25,
     alignItems: "center",
+    justifyContent: 'center'
   },
   headerText: {
     fontSize: 20,

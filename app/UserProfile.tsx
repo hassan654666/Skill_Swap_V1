@@ -11,23 +11,30 @@ import { FontAwesome } from '@expo/vector-icons';
 //import DateTimePicker from '@react-native-community/datetimepicker'; // ✅ Added
 import DateTimePickerModal from 'react-native-modal-datetime-picker';
 
+import { NativeModules } from 'react-native';
+console.log('RNDateTimePickerAndroid:', NativeModules.RNDateTimePickerAndroid);
+
 const { width, height } = Dimensions.get("window");
 
 export default function Profile(){
 
-    const { session, usersData, fetchSessionAndUserData, clearUserData, DarkMode } = useUserContext();
+    const { userData, session, usersData, fetchSessionAndUserData, clearUserData, DarkMode } = useUserContext();
 
+    const [showPicker, setShowPicker] = useState(false);
+    const [selectedDate, setSelectedDate] = useState<Date>(new Date());
+    const [message, setMessage] = useState('');
     const navigation = useNavigation<any>();
     const router = useRouter();
     const isFocused = useIsFocused();
     const colorScheme = useColorScheme();
-    const textColor = DarkMode ? '#fff' : '#000';
-    const backgroundColor = DarkMode ? '#626262' : '#C7C7C7';
-    const SecondaryBackgroundColor = DarkMode ? '#7F8487' : '#B2B2B2';
-    const TertiaryBackgroundColor = DarkMode ? '#828282' : '#E7E7E7';
-    const inputColor = DarkMode ? '#A7A7A7' : '#E7E7E7';
-    const buttonColor = DarkMode ? '#333' : '#007BFF';
-    const buttonTextColor = DarkMode ? '#fff' : '#fff';
+    const textColor = DarkMode ? "#fff" : "#000";
+    const backgroundColor = DarkMode ? "#1e1e1e" : "#ddddddff";
+    const SecondaryBackgroundColor = DarkMode ? "#2e2e2e" : "#bdbdbdff";
+    const TertiaryBackgroundColor = DarkMode ? "#484848ff" : "#ffffffff";
+    const inputColor = DarkMode ? "#6c6c6cff" : "#EAEAEA";
+    const buttonColor = DarkMode ? "#004187ff" : "#007BFF";
+    const redButton = DarkMode ? "#dc3545" : "#ff0000ff"
+    const buttonTextColor = "#fff";
     
     const { userId } = useLocalSearchParams<{ userId?: string }>();
 
@@ -49,7 +56,7 @@ export default function Profile(){
       }, [checkSession])
     )
     
-    const userData = usersData?.find((users: any) =>
+    const user = usersData?.find((users: any) =>
       users?.id === userId
     );
 
@@ -82,24 +89,37 @@ export default function Profile(){
     // 🧩 MEETING REQUEST LOGIC ADDED BELOW
     // -----------------------------------------------------------
 
-    const [showPicker, setShowPicker] = useState(false);
-    const [selectedDate, setSelectedDate] = useState<Date | null>(null);
-    const [message, setMessage] = useState('');
     const showDatePicker = () => setShowPicker(true);
     const hideDatePicker = () => setShowPicker(false);
 
-    const handleDateChange = (date?: Date) => {
-      hideDatePicker();
-      if (date) {
-        setSelectedDate(date);
-      }
-    };
+    // async function used in your Profile or Reschedule flow
+    async function hasExactConflict(userId: string, isoDateTime: string) {
+      const { data, error } = await supabase
+        .from('schedules')
+        .select('id')
+        .or(`user_id.eq.${userId}, partner_id.eq.${userId}`)
+        .eq('datetime', isoDateTime)    // exact match
+        .limit(1);
 
-    async function requestMeeting() {
-      if (!selectedDate) {
+      if (error) throw error;
+      return (data && data.length > 0);
+    }
+
+    async function requestMeeting(date: Date) {
+      if (!date) {
         Alert.alert('Select a Date & Time', 'Please choose a date and time first.');
         return;
       }
+
+      // usage before sending request
+      const iso = date.toISOString();
+      const conflictRequester = await hasExactConflict(userData.id, iso);
+      const conflictReceiver = await hasExactConflict(user?.id, iso);
+      if (conflictRequester || conflictReceiver) {
+        Alert.alert('Scheduling conflict', 'Either you or the other user already has a meeting at that time.');
+        return;
+      }
+      // proceed to insert meeting_requests
 
       try {
         const { data, error } = await supabase
@@ -107,8 +127,8 @@ export default function Profile(){
           .insert([
             {
               requester_id: userData?.id,
-              receiver_id: userId,
-              proposed_datetime: selectedDate.toISOString(),
+              receiver_id: user.id,
+              proposed_datetime: date.toISOString(),
               status: 'pending',
               message: message || null,
             },
@@ -119,7 +139,7 @@ export default function Profile(){
         if (error) throw error;
 
         Alert.alert('Success', 'Meeting request sent successfully!');
-        setSelectedDate(null);
+        setSelectedDate(new Date());
         setMessage('');
       } catch (err: any) {
         console.error(err);
@@ -139,19 +159,19 @@ export default function Profile(){
           </TouchableOpacity>
         </View>
         <View style = {styles.content}>
-          <Image source= {userData?.avatar_url? {uri: userData?.avatar_url } : require('./Avatar.png')} style= {[styles.avatar, {marginTop: 10,}]}></Image>
+          <Image source= {user?.avatar_url? {uri: user?.avatar_url } : require('./Avatar.png')} style= {[styles.avatar, {marginTop: 10,}]}></Image>
           <View style = {styles.userInfo}>
-            <Text style= {[styles.title, {color: textColor}]}>Name: {userData?.name}</Text>
-            <Text style= {[styles.title, {color: textColor}]}>Username: @{userData?.username}</Text>
-            <Text style= {[styles.title, {color: textColor}]}>Description: {userData?.description}</Text>
-            <Text style= {[styles.title, {color: textColor}]}>Skills Offered: {userData?.skillsOffered}</Text>
-            <Text style= {[styles.title, {color: textColor}]}>Skills Required: {userData?.skillsRequired}</Text>
+            <Text style= {[styles.title, {color: textColor}]}>Name: {user?.name}</Text>
+            <Text style= {[styles.title, {color: textColor}]}>Username: @{user?.username}</Text>
+            <Text style= {[styles.title, {color: textColor}]}>Description: {user?.description}</Text>
+            <Text style= {[styles.title, {color: textColor}]}>Skills Offered: {user?.skillsOffered}</Text>
+            <Text style= {[styles.title, {color: textColor}]}>Skills Required: {user?.skillsRequired}</Text>
           </View>
 
           {/* Existing Buttons */}
-          <TouchableOpacity style={[styles.button, {backgroundColor: buttonColor}]}>
+          {/* <TouchableOpacity style={[styles.button, {backgroundColor: buttonColor}]}>
               <Text style={[styles.buttonText, {color: buttonTextColor}]}>Report</Text>
-          </TouchableOpacity>
+          </TouchableOpacity> */}
           <TouchableOpacity style={[styles.button, {backgroundColor: buttonColor}]} onPress={MessageUser}>
               <Text style={[styles.buttonText, {color: buttonTextColor}]}>Message</Text>
           </TouchableOpacity>
@@ -166,28 +186,33 @@ export default function Profile(){
               onPress={showDatePicker}
             >
               <Text style={[styles.buttonText, {color: buttonTextColor}]}>
-                {selectedDate
-                  ? selectedDate.toLocaleString()
-                  : 'Select Date & Time'}
+                Select Date & Time
               </Text>
             </TouchableOpacity>
 
-            {/* {showPicker && ( */}
               <DateTimePickerModal
                 isVisible={showPicker}
                 mode="datetime"
                 display='spinner'
-                onConfirm={handleDateChange}
+                date={selectedDate || new Date()}
+                onConfirm={(date) => {
+                  setSelectedDate(date);
+                  setShowPicker(false);
+                  setTimeout(() => {
+                    Alert.alert(
+                      "Confirm Request",
+                      `Do you want to request a meeting at ${date.toLocaleDateString()} at ${date.toLocaleTimeString()}?`,
+                      [
+                        { text: "Cancel" },
+                        { text: "Yes", onPress: () => requestMeeting(date) }
+                      ]
+                    );
+                  }, 300); // slight delay so the picker closes smoothly
+                }}
                 onCancel={hideDatePicker}
                 minimumDate={new Date()}
+                themeVariant={DarkMode ? "dark" : "light"}
               />
-            {/* )} */}
-
-            {/* {selectedDate && (
-              <Text style={[styles.title, { color: textColor }]}>
-                Selected: {selectedDate.toLocaleString()}
-              </Text>
-            )} */}
 
             {/* <TextInput
               placeholder="Add a message (optional)"
@@ -203,13 +228,6 @@ export default function Profile(){
               value={message}
               onChangeText={setMessage}
             /> */}
-
-            <TouchableOpacity
-              style={[styles.button, {backgroundColor: buttonColor, width: '60%'}]}
-              onPress={requestMeeting}
-            >
-              <Text style={[styles.buttonText, {color: buttonTextColor}]}>Send Request</Text>
-            </TouchableOpacity>
           </View>
         </View>
       </View>

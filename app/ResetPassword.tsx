@@ -13,63 +13,83 @@ export default function ResetPassword() {
   const [localUserData, setLocalUserData] = useState<any>(null);
 
   const { DarkMode } = useUserContext();
-  //const colorScheme = useColorScheme();
+  const colorScheme = useColorScheme();
   const router = useRouter();
 
-  const textColor = DarkMode ? '#fff' : '#000';
-  const backgroundColor = DarkMode ? '#626262ff' : '#C7C7C7';
-  const inputColor = DarkMode ? '#A7A7A7' : '#E7E7E7';
-  const buttonColor = DarkMode ? '#333' : '#007BFF';
-  const buttonTextColor = '#fff';
+  // 🎨 Color palette
+  const textColor = DarkMode ? "#fff" : "#000";
+  const backgroundColor = DarkMode ? "#1e1e1e" : "#ddddddff";
+  const SecondaryBackgroundColor = DarkMode ? "#2e2e2e" : "#bdbdbdff";
+  const TertiaryBackgroundColor = DarkMode ? "#484848ff" : "#ffffffff";
+  const inputColor = DarkMode ? "#6c6c6cff" : "#EAEAEA";
+  const buttonColor = DarkMode ? "#004187ff" : "#007BFF";
+  const redButton = DarkMode ? "#dc3545" : "#ff0000ff"
+  const linkTextColor = DarkMode ? "#007bffff" : "#0040ffff";
+  const buttonTextColor = "#fff";
+  const bubbleOneColor = DarkMode ? '#183B4E' : '#3D90D7';
+  const bubbleTwoColor = DarkMode ? '#015551' : '#1DCD9F';
 
-  // --- Restore Supabase session if opened via deep link ---
   useEffect(() => {
-    const handleDeepLink = async () => {
-      try {
-        const url = await Linking.getInitialURL();
-        console.log('Deep link URL:', url);
-
-        // Step 1: Try to get current session
-        const { data: existingSession } = await supabase.auth.getSession();
-        if (existingSession.session) {
-          setUserEmail(existingSession.session.user?.email || '');
-          setLoading(false);
-          return;
-        }
-
-        // Step 2: If no existing session, parse tokens from deep link
-        if (url && url.includes('#')) {
-          const hash = url.split('#')[1];
-          const params = new URLSearchParams(hash);
-          const access_token = params.get('access_token');
-          const refresh_token = params.get('refresh_token');
-
-          if (access_token && refresh_token) {
-            const { data, error } = await supabase.auth.setSession({
-              access_token,
-              refresh_token,
-            });
-            if (error) throw error;
-
-            console.log('Session restored from deep link');
-            setUserEmail(data.session?.user?.email || '');
-          } else {
-            console.warn('No tokens found in deep link.');
-          }
-        } else {
-          console.log('No deep link detected, waiting for in-app session.');
-          const { data } = await supabase.auth.getSession();
-          setUserEmail(data.session?.user?.email || '');
-        }
-      } catch (err) {
-        console.error('Error restoring session:', err);
-      } finally {
-        setLoading(false);
+  const restoreSessionFromDeepLink = async (url?: any) => {
+    try {
+      if (!url) {
+        url = await Linking.getInitialURL();
       }
-    };
+      console.log('Deep link URL:', url);
+      Alert.alert('Deep link URL:', url);
 
-    handleDeepLink();
-  }, []);
+      // 1️⃣ Check existing session first
+      const { data: existingSession } = await supabase.auth.getSession();
+      if (existingSession.session) {
+        console.log('Existing session found');
+        setUserEmail(existingSession.session.user?.email || '');
+        setLoading(false);
+        return;
+      }
+
+      // 2️⃣ Handle Supabase deep link tokens
+      if (url && url.includes('#')) {
+        const hash = url.split('#')[1];
+        const params = new URLSearchParams(hash);
+        const access_token = params.get('access_token');
+        const refresh_token = params.get('refresh_token');
+
+        if (access_token && refresh_token) {
+          const { data, error } = await supabase.auth.setSession({
+            access_token,
+            refresh_token,
+          });
+          if (error) throw error;
+
+          console.log('Session restored from deep link');
+          setUserEmail(data.session?.user?.email || '');
+        } else {
+          console.warn('No tokens found in deep link.');
+          Alert.alert('No tokens found in deep link.');
+        }
+      } else {
+        console.log('No token hash in deep link.');
+        Alert.alert('No token hash in deep link.');
+      }
+    } catch (err) {
+      console.error('Error restoring session:', err);
+      Alert.alert('Error restoring session:');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // 🟢 Handle initial URL on cold start
+  restoreSessionFromDeepLink();
+
+  // 🟢 Handle when app already open (foreground deep links)
+  const sub = Linking.addEventListener('url', (event) => {
+    console.log('URL event received:', event.url);
+    restoreSessionFromDeepLink(event.url);
+  });
+
+  return () => sub.remove();
+}, []);
 
   // --- Fetch user data once email is known ---
   useEffect(() => {

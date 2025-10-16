@@ -34,3 +34,7 @@ yarn-error.*
 
 # typescript
 *.tsbuildinfo
+
+# Firebase credentials (DO NOT COMMIT)
+skill-swap-8fce3-firebase-adminsdk-fbsvc-4efd06f3df.json
+GoogleService-Info.plist

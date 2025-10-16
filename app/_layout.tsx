@@ -115,7 +115,7 @@ function RootLayoutNav() {
             <Stack.Screen name='Chat' options={{ headerShown: false }} />
             <Stack.Screen name='EditProfile' options={{ headerShown: false }} />
             <Stack.Screen name="ResetPassword" options={{ headerShown: false, presentation: 'fullScreenModal' }} />
-            
+            <Stack.Screen name='Request' options={{ headerShown: false }} />
             
           </Stack>
         </UserProvider>

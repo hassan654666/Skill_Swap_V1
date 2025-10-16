@@ -161,6 +161,7 @@ export default function TabLayout() {
           tabBarIcon: ({ color, size }) => (
             <FontAwesome name="exchange" size={size} color={color} />
           ),
+          href: null, tabBarStyle: { display: "none" },
         }}
       />
       <Tabs.Screen
