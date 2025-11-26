@@ -14,10 +14,11 @@ import { View, Text } from "react-native";
 import Loading from "../Loading";
 import SplashScreen from "@/components/SplashScreen";
 import { Tab } from "@rneui/base";
+import ResetPassword from "../ResetPassword";
 
 export default function TabLayout() {
   console.log("tabs layout rendered");
-  const { userData, unreadCount } = useUserContext();
+  const { userData, unreadCount, isRecovery } = useUserContext();
   const pathname = usePathname();
 
   const [isFirstLaunch, setIsFirstLaunch] = useState<boolean | null>(null);
@@ -68,6 +69,10 @@ export default function TabLayout() {
         }}
       />
     );
+  }
+
+  if (isRecovery) {
+    return <ResetPassword />;
   }
 
   if (!userData) {
@@ -151,6 +156,15 @@ export default function TabLayout() {
           title: "Schedule",
           tabBarIcon: ({ color, size }) => (
             <FontAwesome name="calendar" size={size} color={color} />
+          ),
+        }}
+      />
+      <Tabs.Screen
+        name="Courses"
+        options={{
+          title: "Courses",
+          tabBarIcon: ({ color, size }) => (
+            <FontAwesome name="book" size={size} color={color} />
           ),
         }}
       />

@@ -25,8 +25,7 @@ export default function Inbox() {
   const navigation = useNavigation<any>();
   const router = useRouter();
   const colorScheme = useColorScheme();
-
-  // 🎨 Color palette
+  // const DarkMode = colorScheme === 'dark';
   const textColor = DarkMode ? "#fff" : "#000";
   const backgroundColor = DarkMode ? "#1e1e1e" : "#ddddddff";
   const SecondaryBackgroundColor = DarkMode ? "#2e2e2e" : "#bdbdbdff";
@@ -63,25 +62,6 @@ export default function Inbox() {
     };
     loadCachedInbox();
   }, [userData?.id]);
-
-  const upsertInboxItem = (newItem: any) => {
-    if (!newItem) return;
-    setInboxItems((prev) => {
-      const others = prev.filter(
-        (item) =>
-          !(
-            (item?.sender_Id === newItem?.sender_Id && item?.receiver_Id === newItem?.receiver_Id) ||
-            (item?.sender_Id === newItem?.receiver_Id && item?.receiver_Id === newItem?.sender_Id)
-          )
-      );
-      const updated =  [newItem, ...others].sort((a, b) => new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime()
-      );
-      
-      AsyncStorage.setItem(CACHE_KEY, JSON.stringify(updated));
-
-      return updated;
-    });
-  };
 
   const loadInbox = async () => {
   
@@ -148,13 +128,10 @@ export default function Inbox() {
         (payload) => {
           if(!payload.new) return;
           const updated : any = payload.new;
-          upsertInboxItem(updated);
-          //saveToLocal([updated, ...inboxItems]);
-          //AsyncStorage.setItem(CACHE_KEY, JSON.stringify([updated, ...inboxItems]));
+          loadInbox();
           console.log('Chat payload (sender):', updated.sender_Id);
         }
-      )
-      .on(
+      ).on(
         'postgres_changes',
         {
           event: '*',
@@ -165,12 +142,11 @@ export default function Inbox() {
         (payload) => {
           if(!payload.new) return;
           const updated : any = payload.new;
-          upsertInboxItem(updated);
-          //saveToLocal([updated, ...inboxItems]);
-          //AsyncStorage.setItem(CACHE_KEY, JSON.stringify([updated, ...inboxItems]));
-          console.log('Chat payload (receiver):', updated.receiver_Id);
+          loadInbox();
+          console.log('Chat payload (sender):', updated.sender_Id);
         }
       )
+      
       .subscribe();
 
     return () => {
@@ -301,7 +277,7 @@ export default function Inbox() {
   return (
     <View style={[styles.container, { backgroundColor: backgroundColor }]}>
       <View style= {[styles.topbar, {backgroundColor: SecondaryBackgroundColor}]}>
-        <TouchableOpacity style= { {margin: 10, marginLeft: 15,} } onPress={() => navigation.navigate('Home')}>
+        <TouchableOpacity style= { {margin: 10, marginLeft: 15,} }>
           {/* <FontAwesome name="arrow-left" size={20} color={textColor} /> */}
           <Text style={{fontSize: 20}}>     </Text>
         </TouchableOpacity>
@@ -316,7 +292,7 @@ export default function Inbox() {
         )}
 
         {/* Right Section */}
-        <TouchableOpacity style={{ margin: 10, marginLeft: 20 }} onPress={toggleSearch}>
+        <TouchableOpacity style={{ margin: 10, marginLeft: 10, paddingHorizontal: 10 }} onPress={toggleSearch}>
           <FontAwesome name={showSearch ? 'close' : 'search'} size={20} color={textColor} />
         </TouchableOpacity>
       </View>

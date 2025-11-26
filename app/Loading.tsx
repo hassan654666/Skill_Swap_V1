@@ -6,10 +6,9 @@ import { useIsFocused, useFocusEffect } from '@react-navigation/native';
 import { useCallback } from 'react';
 
 export default function Loading() {
-  const {loading, session, DarkMode} = useUserContext();
-  const colorScheme = useColorScheme();
+  
+  const {loading, userData, session, DarkMode, fetchSessionAndUserData} = useUserContext();
 
-  // 🎨 Color palette
   const textColor = DarkMode ? "#fff" : "#000";
   const backgroundColor = DarkMode ? "#1e1e1e" : "#ddddddff";
   const SecondaryBackgroundColor = DarkMode ? "#2e2e2e" : "#bdbdbdff";
@@ -36,8 +35,13 @@ export default function Loading() {
   const checkSession = async () => {
     try {
       if (session) {
-        router.replace('/(tabs)/Home');
-        console.log("Going Home");
+        if(!userData){
+          router.replace('/CompleteProfile');
+        } else if(userData?.banned){
+          router.replace('/Banned')
+        } else {
+          router.replace('/(tabs)/Home');
+        }
       } else {
         router.replace('/Login');
         console.log("Going Login");
@@ -52,6 +56,7 @@ export default function Loading() {
       if(!loading){
         checkSession();
       }
+      fetchSessionAndUserData();
     },[loading])
   )
 

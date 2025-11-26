@@ -9,6 +9,8 @@ import { saveFcmToken } from '@/utils/saveFcmToken';
 import { removeFcmToken } from '@/utils/removeFcmToken';
 import { useColorScheme } from 'react-native';
 import { Audio } from 'expo-av';
+import { GlobalPiPWindow } from '@/app/GlobalPiPWindow';
+import { useRouter } from 'expo-router';
 
 interface UserContextType {
   session: any;
@@ -22,6 +24,20 @@ interface UserContextType {
   setUnreadCount: (count: number) => void;
   DarkMode: boolean;
   setIsDark: (isDark: boolean) => void;
+  isRecovery: any;
+  setIsRecovery: any;
+  pipVisible: boolean,
+  setPipVisible: any,
+  pipUrl: string | null,
+  setPipUrl: any,
+  partnerId: string | null,
+  setPartnerId: any,
+  skills: any,
+  setSkills: any,
+  courses: any, 
+  setCourses: any,
+  reports: any, 
+  setReports: any,
   fetchSessionAndUserData: () => Promise<void>;
   clearUserData: () => void;
 }
@@ -43,6 +59,14 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [userId, setUserId] = useState<any>();
   const [recording, setRecording] = useState<Audio.Recording | null>(null);
   const [DarkMode, setDarkMode] = useState(dark);
+  const [isRecovery, setIsRecovery] = useState(false);
+  const [pipVisible, setPipVisible] = useState(false);
+  const [pipUrl, setPipUrl] = useState<string | null>(null);
+  const [partnerId, setPartnerId] = useState<string | null>(null);
+  const [skills, setSkills] = useState<any[]>([]);
+  const [courses, setCourses] = useState<any[]>([]);
+  const [reports, setReports] = useState<any[]>([]);
+  const router = useRouter();
 
   useEffect(() => {
    const checkAsyncStorage = async () => {
@@ -90,48 +114,125 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
         // Fetch other users' data
         const { data: users, error } = await supabase
           .from('profiles')
-          .select('id, authid, name, username, email, description, skillsOffered, skillsRequired, avatar_url')
+          .select('id, authid, name, username, email, description, skillsOffered, skillsRequired, avatar_url, header_url, rating, reviews')
           .neq('authid', user.id);
 
-        if (!error) {
-          AsyncStorage.setItem('users', JSON.stringify(users));
-          usersDataRef.current = users;
-        }
+        // if (!error) {
+        //   AsyncStorage.setItem('users', JSON.stringify(users));
+        //   usersDataRef.current = users;
+        // }
 
         // Fetch the current user's profile
         const { data: profile, error: profileError } = await supabase
           .from('profiles')
-          .select('id, authid, name, username, email, description, skillsOffered, skillsRequired, avatar_url, expo_token, fcm_token')
+          .select('id, authid, name, username, email, description, skillsOffered, skillsRequired, avatar_url, header_url, expo_token, fcm_token, is_admin, rating, reviews, banned')
           .eq('authid', user.id)
           .single();
 
-        if (!profileError) {
-          AsyncStorage.setItem('profile', JSON.stringify(profile));
-          userDataRef.current = profile;
-          setUserId(profile.id);
-          // --- IMPORTANT: immediate save if token already exists in hook and differs from profile
-          // const tokenString = expoPushToken?.data ?? (typeof expoPushToken === 'string' ? expoPushToken : null);
-          // console.log("Profile Id fetched:", profile.id);
-          // console.log("Expo Push Token from hook during fetchSessionAndUserData:", expoPushToken);
-          // //console.log("Checking token during fetchSessionAndUserData:", tokenString);
-          // console.log("Profile token during fetchSessionAndUserData:", profile.expo_token);
-          // if (tokenString && profile.expo_token !== tokenString) {
-          //   try {
-          //     await savePushToken(profile.id, expoPushToken);
-          //     // update local profile copy to reflect saved token
-          //     userDataRef.current = { ...userDataRef.current, expo_token: expoPushToken?.data };
-          //     AsyncStorage.setItem('profile', JSON.stringify(userDataRef.current));
-          //   } catch (err) {
-          //     console.error('Failed to save token during fetchSessionAndUserData:', err);
-          //   }
-          // }
+           // Fetch all skills
+        const { data: skillsData, error: sError } = await supabase
+          .from("skills")
+          .select("id, name, type, description");
+  
+        if (sError) {
+          console.log("skills error:", sError);
+          return;
         }
+        setSkills(skillsData);
+  
+        // Fetch profile_skills with join
+        const { data: profileSkills, error: psError } = await supabase
+          .from("profile_skills")
+          .select("profile_id, category, skills(id, name, type)");
+  
+        if (psError) {
+          console.log("profile_skills error:", psError);
+          return;
+        }
+  
+        // Merge skills into profiles
+        const finalUsers : any = users?.map((user) => {
+          const offered = profileSkills
+            .filter(ps => ps.profile_id !== profile?.id && ps.category === "offered")
+            .map(ps => ps.skills);
+  
+          const required = profileSkills
+            .filter(ps => ps.profile_id !== profile?.id && ps.category === "required")
+            .map(ps => ps.skills);
+  
+          return {
+            ...user,
+            skillsOffered: offered,
+            skillsRequired: required
+          };
+        });
+  
+        if (!psError) {
+          AsyncStorage.setItem('users', JSON.stringify(finalUsers));
+          usersDataRef.current = finalUsers;
+        }
+
+        if (!profileError) {
+          setUserId(profile.id);
+          console.log("userId from profiles table:", profile.id);
+
+          // Merge skills into the profile
+          const offered = profileSkills
+            .filter(ps => ps.profile_id === profile.id && ps.category === "offered")
+            .map(ps => ps.skills);
+
+          const required = profileSkills
+            .filter(ps => ps.profile_id === profile.id && ps.category === "required")
+            .map(ps => ps.skills);
+
+          const finalUser = {
+            ...profile,
+            skillsOffered: offered,
+            skillsRequired: required,
+          };
+
+          await AsyncStorage.setItem("profile", JSON.stringify(finalUser));
+          userDataRef.current = finalUser;
+        }
+
+        const { data: coursesData, error: cError } = await supabase
+          .from("courses")
+          .select("*");
+  
+        if (cError) {
+          console.log("courses error:", cError);
+          return;
+        }
+        setCourses(coursesData);
+
+        const { data: reportsData, error: rError } = await supabase
+          .from("reports")
+          .select("*");
+  
+        if (cError) {
+          console.log("reports error:", cError);
+          return;
+        }
+        setReports(coursesData);
 
         // Trigger re-render by changing the state
         setUpdateFlag(prev => !prev); // Toggle the update flag
+
+        if(!profile){
+          router.replace('/CompleteProfile');
+        } else if(profile?.banned){
+          router.replace('/Banned')
+        } else {
+          router.replace('/(tabs)/Home');
+        }
+        
+      } else {
+        router.replace('/Login')
       }
     } catch (error: any) {
       console.error('Error fetching data:', error.message);
+    } finally {
+      setLoading(false)
     }
   }, []); // depends on expoPushToken to ensure token check runs if that changes during fetch
 
@@ -289,11 +390,26 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
       loading,
       setUnreadCount,
       DarkMode,
+      isRecovery,
+      setIsRecovery,
       setIsDark,
+      pipVisible,
+      setPipVisible,
+      pipUrl,
+      setPipUrl,
+      partnerId,
+      setPartnerId,
+      skills,
+      setSkills,
+      courses, 
+      setCourses,
+      reports, 
+      setReports,
       fetchSessionAndUserData,
       clearUserData
     }}>
       {children}
+      {pipVisible && <GlobalPiPWindow url={pipUrl} partnerId={partnerId}/>}
     </UserContext.Provider>
   );
 };

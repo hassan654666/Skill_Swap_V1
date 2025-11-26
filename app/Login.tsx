@@ -1,16 +1,26 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useUserContext } from '@/components/UserContext';
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert, Image, useColorScheme, BackHandler } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert, Image, useColorScheme } from 'react-native';
 import { supabase } from '@/lib/supabase';
+//import { usePushToken } from '@/hooks/usePushToken';
+//import { savePushToken } from '@/utils/savePushToken';
 import { useNavigation, useRouter } from 'expo-router';
+import * as Linking from 'expo-linking';
 import { useIsFocused, useFocusEffect } from '@react-navigation/native';
-import { FontAwesome } from '@expo/vector-icons';
+import { FontAwesome, Ionicons } from '@expo/vector-icons';
+import GoogleSignInButton from '@/components/GoogleSignInButton';
+import * as WebBrowser from 'expo-web-browser';
+
+WebBrowser.maybeCompleteAuthSession(); // REQUIRED FOR EXPO AUTH FLOW
 
 const Login: React.FC = () => {
+
   const { userData, session, fetchSessionAndUserData, clearUserData, DarkMode } = useUserContext();
+
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  //const [user, setUser] = useState<{ id: string; email: any } | null>(null);
+  const [showPassword, setShowPassword] = useState(false);
+  const [user, setUser] = useState<{ id: string; email: any } | null>(null);
   const navigation = useNavigation<any>();
   const router = useRouter();
   const isFocused = useIsFocused();
@@ -29,11 +39,14 @@ const Login: React.FC = () => {
   const bubbleOneColor = DarkMode ? '#183B4E' : '#3D90D7';
   const bubbleTwoColor = DarkMode ? '#015551' : '#1DCD9F';
 
+  //const { expoPushToken } = usePushToken();
+  //const { savePushToken } = savePushToken();
+
   const checkSession = async () => {
     if(isFocused){
       try {
         if (session) {
-          router.replace('/(tabs)/Home')
+          router.replace('/(tabs)/Home');
           //navigation.navigate('Home');
         }
       } catch (error) {
@@ -42,11 +55,30 @@ const Login: React.FC = () => {
     }
   };
 
-  useFocusEffect(
-      useCallback(() => {
-        checkSession();
-      }, [session])
-    );
+  /*const checkSession = useCallback(() => {
+    console.log('Session at login:', session);
+    if (session && isFocused) {
+      console.log('Navigating to Home');
+      navigation.navigate('Home');
+    }
+  }, [session]);*/
+  
+  //hassan654666@gmail.com
+  //dsaqw_1761
+
+  // useEffect(() => {
+  //   checkSession();
+  // }, [session]);
+
+  // useFocusEffect(
+  //   React.useCallback(() => {
+  //     checkSession();
+  //   }, [session])
+  // );
+
+  /*useEffect(() => {
+    checkSession();
+  }, []);*/
 
   const handleLogin = async () => {
     try {
@@ -56,6 +88,7 @@ const Login: React.FC = () => {
       //Alert.alert('Success', 'You have logged in!');
       //fetchSessionAndUserData();
       //await savePushToken(user?.id, expoPushToken);
+      //router.replace('/(tabs)/Home');
       //navigation.navigate('Home');
     } catch (error: any) {
       Alert.alert('Error', error.message);
@@ -64,14 +97,19 @@ const Login: React.FC = () => {
   };
 
   const handleGoogleLogin = async () => {
+    
     try {
+      
+      const redirectUrl = Linking.createURL('/callback');
+
       const { error } = await supabase.auth.signInWithOAuth({ 
         provider: 'google', 
         options: {
-        redirectTo: 'skillswap://Home', // Custom URL scheme for deep linking
+        redirectTo: redirectUrl, // Custom URL scheme for deep linking
       },
      });
       if (error) throw error;
+      console.log('Google login tapped!');
       //Alert.alert('Success', 'You are logged in!');
     } catch (error: any) {
       Alert.alert('Error', error.message);
@@ -79,17 +117,6 @@ const Login: React.FC = () => {
   };
 
   //savePushToken(user?.id);
-
-  const backAction = () => {
-      return true; 
-    };
-  
-    useFocusEffect(
-      useCallback(() => {    
-        const backHandler = BackHandler.addEventListener('hardwareBackPress', backAction);
-        return () => backHandler.remove();
-      }, [])
-    );
 
   console.log('Login rendered');
 
@@ -106,16 +133,28 @@ const Login: React.FC = () => {
           keyboardType="email-address"
           autoCapitalize="none"
         />
+        <View style={{ width: '100%', alignItems: 'center', position: 'relative' }}>
         <TextInput
           style={[styles.input, {backgroundColor: inputColor}]}
           placeholder="Password"
           value={password}
           onChangeText={setPassword}
-          secureTextEntry
+          secureTextEntry={!showPassword}
         />
+        <TouchableOpacity
+        style={styles.eyeButton}
+        onPress={() => setShowPassword(!showPassword)}
+      >
+        <Ionicons
+          name={showPassword ? 'eye' : 'eye-off'}
+          size={24}
+          color="#414141ff"
+        />
+      </TouchableOpacity>
+      </View>
 
         <TouchableOpacity onPress={() => navigation.navigate('ForgotPassword')}>
-          <Text style={styles.linkText}>Forgot Password?</Text>
+          <Text style={[styles.linkText, {color: linkTextColor}]}>Forgot Password?</Text>
         </TouchableOpacity>
 
         <TouchableOpacity style={[styles.button, {backgroundColor: buttonColor}]} onPress={handleLogin}>
@@ -127,13 +166,15 @@ const Login: React.FC = () => {
           <FontAwesome name="google" size={24} color={buttonTextColor} style={{ marginLeft: 8 }} />
         </TouchableOpacity> */}
 
-        <TouchableOpacity style={[styles.button, {backgroundColor: buttonColor}]} onPress={() => navigation.navigate('Signup')}>
+        <TouchableOpacity style={[styles.button, {backgroundColor: buttonColor, marginBottom: 30}]} onPress={() => navigation.navigate('Signup')}>
           <Text style={[styles.buttonText, {color: buttonTextColor}]}>Sign Up</Text>
         </TouchableOpacity>
 
         {/* <TouchableOpacity onPress={() => navigation.navigate('ForgotPassword')}>
           <Text style={styles.linkText}>Don't have an account? Signup</Text>
         </TouchableOpacity> */}
+
+        <GoogleSignInButton />
 
       </View>
     </View>
@@ -166,11 +207,18 @@ const styles = StyleSheet.create({
   },
   input: {
     width: '80%',
-    padding: 10,
+    height: 40,
+    // padding: 10,
+    paddingRight: 50,
     borderWidth: 1,
     borderColor: '#ccc',
-    borderRadius: 8,
+    borderRadius: 10,
     marginBottom: 10,
+  },
+  eyeButton: {
+    position: 'absolute',
+    right: 50,
+    top: 10,
   },
   button: {
     width: '25%',
@@ -193,7 +241,7 @@ const styles = StyleSheet.create({
   },
   linkText: {
     fontSize: 16,
-    color: 'blue',
+    //color: 'blue',
     textAlign: 'center',
     marginTop: 20,
     marginVertical: 10,

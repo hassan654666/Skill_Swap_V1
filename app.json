@@ -2,8 +2,8 @@
   "expo": {
     "name": "Skill Swap",
     "slug": "skillswap",
-    "version": "0.1.2",
-    "orientation": "portrait",
+    "version": "0.1.4",
+    "orientation": "default",
     "icon": "./assets/images/icon.png",
     "scheme": "skillswap",
     "deeplinks": true,
@@ -83,7 +83,12 @@
       },
       "eas": {
         "projectId": "3f611978-26cf-4f78-9aea-ffc2ca23d271"
-      }
+      },
+      "supabaseUrl": "https://saxuhvcppykdazdfosae.supabase.co",
+      "supabaseAnonKey": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNheHVodmNwcHlrZGF6ZGZvc2FlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MzMxNzM1ODksImV4cCI6MjA0ODc0OTU4OX0.EHyhsLl7ehchRsPi61kejdGidDDDF1yRiDyBphq7ZfY",
+      "googleAuthWebClientId": "641908416907-suradgcci9s2q0vtcq3kg8l8c2s3vp7q.apps.googleusercontent.com",
+      "sdkKey": "4xE50X2uT_W5kZYeLmgTjQ",
+      "zoomUrl": "https://hassan654666.github.io/Zoom-web-sdk"
     },
     "owner": "hassan_farooqi"
   }

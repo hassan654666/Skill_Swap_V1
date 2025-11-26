@@ -3,7 +3,7 @@ import { Link, useRouter } from "expo-router";
 import { useCallback } from "react";
 import { useFocusEffect } from "@react-navigation/native";
 import { View, Text, Pressable } from "react-native";
-import AdminDashboard from "./AdminDashboard";
+import Users from "./Users"
 
 export default function AdminTabScreen() {
 
@@ -25,7 +25,7 @@ export default function AdminTabScreen() {
 
   return (
     <View style={{ flex: 1}}>
-      <AdminDashboard />
+      <Users/>
     </View>
   );
 }

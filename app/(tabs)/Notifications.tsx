@@ -4,6 +4,7 @@ import { FontAwesome } from "@expo/vector-icons";
 import { useFocusEffect, useRouter, useNavigation } from "expo-router";
 import { useUserContext } from "@/components/UserContext";
 import { supabase } from "@/lib/supabase";
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const { width, height } = Dimensions.get("window");
 
@@ -28,6 +29,23 @@ export default function Notifications() {
 
   const [notifications, setNotifications] = useState<any[]>([]);
 
+  const CACHE_KEY = `user_notifications${userData.id}`;
+
+  useEffect(() => {
+    const loadCachedNotifications = async () => {
+      try {
+        const cachedData = await AsyncStorage.getItem(CACHE_KEY);
+        if (cachedData) {
+          const parsedData = JSON.parse(cachedData);
+          setNotifications(parsedData);
+        }
+      } catch (error) {
+        console.error('Failed to load cached schedule:', error);
+      }
+    };
+    loadCachedNotifications();
+  }, [userData?.id]);
+
   // 🧠 Fetch notifications for the current user
   const fetchNotifications = async () => {
     if (!session?.user) return;
@@ -38,8 +56,12 @@ export default function Notifications() {
       .eq("user_id", userData?.id)
       .order("created_at", { ascending: false });
 
-    if (error) console.error("Error fetching notifications:", error);
-    else setNotifications(data || []);
+    if (error) {
+      console.error("Error fetching notifications:", error);
+    } else {
+      setNotifications(data || []); 
+      await AsyncStorage.setItem(CACHE_KEY, JSON.stringify(data));
+    }
   };
 
   useEffect(() => {
@@ -66,19 +88,61 @@ export default function Notifications() {
     };
   }, [userData?.id]);
 
-  const handleNotificationPress = (item: any) => {
+  const handleNotificationPress = async (item: any) => {
     if ((item.type === "meeting_request" && item.read === false) || (item.type === "reschedule" && item.read === false)) {
       router.push({
         pathname: '/Request',
         params: { meetingId: item.meeting_id },
       });
     } else if (item.type === "meeting_link") {
-      router.push({
-        pathname: '/Chat',
-        params: { receiverId: item.sender_id },
-      });
+      
+      const { data: schedule, error: scheduleError } = await supabase
+      .from("schedules")
+      .select("*")
+      .eq("meeting_id", item.meeting_id)
+      .single()
+      if(scheduleError) console.error('Error fetching schedule: ', scheduleError);
+
+      if(schedule.status !== "Missed" && schedule.status !== "Completed"){
+
+        const updatedjoined = Array.isArray(schedule?.joined)
+          ? [...new Set([...schedule.joined, userData?.id])]
+          : [userData?.id];
+
+        const { data: sched, error: schedError } = await supabase
+        .from("schedules")
+        .update({ joined:  updatedjoined})
+        .eq("meeting_id", schedule.meeting_id)
+        .single()
+        if(schedError) console.error('Error marking meeting joined: ', schedError);
+
+        const { data, error } = await supabase
+        .from("meetings")
+        .select("*")
+        .eq("meeting_id", item.meeting_id)
+        .single()
+        if(error) console.error('Error fetching meeting: ', error);
+
+        const partnerId = data.host_id === item.user_id ? data.guest_id : data.host_id;
+        router.push({
+          pathname: '/Meeting',
+          params: { 
+            partnerId: partnerId, 
+            meetingId: data.zoom_meeting_id, 
+            password: data.zoom_password, 
+            Link: data.zoom_join_url 
+          },
+        });
+      } else {
+        Alert.alert("Meeting Inactive", "This meeting is either missed or completed.");
+      }
+      
+    } else if (item.type === "meeting_missed"){
+      Alert.alert("Meeting Missed", 'You missed a scheduled meeting')
+    } else if (item.type === "accepted"){
+      Alert.alert("Request Accepted", 'Your meeting request has been accepted');
     } else {
-      Alert.alert("You have already handled this request");
+      Alert.alert(`${item.title}`, item.message);
     }
   };
 

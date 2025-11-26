@@ -5,6 +5,7 @@ import { useNavigation, useRouter } from 'expo-router';
 import { useIsFocused, useFocusEffect } from '@react-navigation/native';
 import { darkColors } from '@rneui/themed';
 import { FontAwesome } from '@expo/vector-icons';
+import { he } from 'date-fns/locale';
 //import { savePushToken } from '@/utils/savePushToken';
 //import { usePushToken } from '@/hooks/usePushToken';
 
@@ -20,8 +21,7 @@ export default function AdminDashboard() {
   const router = useRouter();
   const isFocused = useIsFocused();
   const colorScheme = useColorScheme();
-
-  // 🎨 Color palette
+  // const DarkMode = colorScheme === 'dark';
   const textColor = DarkMode ? "#fff" : "#000";
   const backgroundColor = DarkMode ? "#1e1e1e" : "#ddddddff";
   const SecondaryBackgroundColor = DarkMode ? "#2e2e2e" : "#bdbdbdff";
@@ -29,10 +29,7 @@ export default function AdminDashboard() {
   const inputColor = DarkMode ? "#6c6c6cff" : "#EAEAEA";
   const buttonColor = DarkMode ? "#004187ff" : "#007BFF";
   const redButton = DarkMode ? "#dc3545" : "#ff0000ff"
-  const linkTextColor = DarkMode ? "#007bffff" : "#0040ffff";
   const buttonTextColor = "#fff";
-  const bubbleOneColor = DarkMode ? '#183B4E' : '#3D90D7';
-  const bubbleTwoColor = DarkMode ? '#015551' : '#1DCD9F';
 
   function goToProfile(){
     router.push('/Profile')
@@ -73,9 +70,9 @@ useFocusEffect(
       // onPress={() => navigation.navigate('UserProfile', { userId: item?.id })
       // }
       onPress={() => router.push({
-        pathname: '/UserProfile',
+        pathname: '/(tabs)/admin/ManageUser',
         params:{
-          userId: item?.id
+          id: item?.id
         }
       })
       }
@@ -86,7 +83,7 @@ useFocusEffect(
           {/*<Text style={[styles.usersName, {color: textColor}]}>{item.id}</Text>*/}
           <Text numberOfLines={2} style={[styles.usersName, {color: textColor}]}>{item?.name}</Text>
           <Text numberOfLines={1} style={[styles.usersUsername, {color: textColor}]}>@{item?.username}</Text>
-          <Text numberOfLines={4} style={[styles.usersSkills, {color: textColor}]}>Skills Offered: {item?.skillsOffered}</Text>
+          {/* <Text numberOfLines={4} style={[styles.usersSkills, {color: textColor}]}>Skills Offered: {item?.skillsOffered}</Text> */}
         </View>
       </View>
     </TouchableOpacity>
@@ -100,8 +97,9 @@ useFocusEffect(
       <View style={[styles.container, {backgroundColor: backgroundColor}]}>
         <View style= {{height: height * 0.12, width: '100%', justifyContent: 'space-between', backgroundColor: SecondaryBackgroundColor}}>
         <View style= {[styles.topbar, {backgroundColor: SecondaryBackgroundColor}]}>
-          <TouchableOpacity style= { {margin: 10, marginLeft: 15,} } onPress={() => navigation.navigate('AdminDashboard')}>
-            <FontAwesome name="arrow-left" size={20} color={textColor} />
+          <TouchableOpacity style= { {margin: 10, marginLeft: 5, paddingHorizontal: 10} } onPress={() => navigation.navigate('AdminDashboard')}>
+            {/* <FontAwesome name="arrow-left" size={20} color={textColor} /> */}
+            <Text></Text>
           </TouchableOpacity>
           {!showSearch && (<Text style={[styles.title, {color: textColor, backgroundColor: SecondaryBackgroundColor}]}>Manage Users</Text>)}
           {showSearch && (
@@ -123,7 +121,7 @@ useFocusEffect(
             <FontAwesome name="user" size={24} color={buttonTextColor} />
             <Text style={styles.buttonText}>Users</Text>
           </TouchableOpacity>
-          <TouchableOpacity style ={styles.navButton} onPress={() => navigation.navigate('Courses')}>
+          <TouchableOpacity style ={styles.navButton} onPress={() => navigation.navigate('ManageCourses')}>
             <View style={{ position: "relative" }}>
               <FontAwesome name="book" size={24} color={buttonTextColor} />
               {unreadCount > 0 && (
@@ -134,7 +132,7 @@ useFocusEffect(
             </View>
             <Text style={styles.buttonText}>Courses</Text>
           </TouchableOpacity>
-          <TouchableOpacity style ={styles.navButton} onPress={() => navigation.navigate('Reports')}>
+          <TouchableOpacity style ={styles.navButton} onPress={() => navigation.navigate('ManageReports')}>
             <View style={{ position: "relative" }}>
                 <FontAwesome name="file" size={24} color={buttonTextColor} />
                 {unreadCount > 0 && (
@@ -193,7 +191,7 @@ useFocusEffect(
       justifyContent: 'space-between',
 
     },
-    inputArea: {
+   inputArea: {
       //position: 'absolute',
       //top: 90,
       // flex: 0.03,
@@ -208,7 +206,7 @@ useFocusEffect(
     },
     input: {
       width: '50%',
-      height: height * 0.04,
+      // height: 40,
       //height: '100%',
       borderWidth: 1,
       borderColor: '#ccc',
@@ -317,10 +315,11 @@ useFocusEffect(
     navButton: {
       width: '33%',
       // padding: height * 0.01,
-      // borderRadius: 8,
+      //borderRadius: 8,
       alignItems: 'center',
       justifyContent: 'flex-end',
       marginBottom: height * 0.01,
+      // backgroundColor: 'red',
     },
     buttonText: {
       color: '#f5f5f5',

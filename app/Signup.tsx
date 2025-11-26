@@ -4,14 +4,20 @@ import { supabase } from '@/lib/supabase';
 import { useUserContext } from '@/components/UserContext';
 import { useNavigation, useRouter } from 'expo-router';
 import { useFocusEffect, useIsFocused } from '@react-navigation/native';
+import { Ionicons } from '@expo/vector-icons';
 
 const SignupPage: React.FC = () => {
-  const { session, clearUserData, DarkMode } = useUserContext();
+
+  const { clearUserData, session, DarkMode } = useUserContext();
+
   const [user, setUser] = useState<any>();
   const [name, setName] = useState('');
   const [username, setUserName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [skillsoffered, setSkillsOff] = useState('');
   const [skillsrequired, setSkillsReq] = useState('');
   const navigation = useNavigation<any>();
@@ -32,45 +38,43 @@ const SignupPage: React.FC = () => {
   const bubbleOneColor = DarkMode ? '#183B4E' : '#3D90D7';
   const bubbleTwoColor = DarkMode ? '#015551' : '#1DCD9F';
 
-  const checkSession = async () => {
-    if(isFocused){
-      try {
-        if (session) {
-          router.replace('/(tabs)/Home')
-          //navigation.navigate('Home');
-        }
-      } catch (error) {
-        console.error('Navigation Error:', error);
-      }
-    }
-  };
+  // const checkSession = async () => {
+  //   if(isFocused){
+  //     try {
+  //       if (session) {
+  //         router.replace('/(tabs)/Home')
+  //         //navigation.navigate('Home');
+  //       }
+  //     } catch (error) {
+  //       console.error('Navigation Error:', error);
+  //     }
+  //   }
+  // };
 
-  useFocusEffect(
-    useCallback(() => {
-      checkSession();
-    }, [session])
-  );
+  // useFocusEffect(
+  //   useCallback(() => {
+  //     checkSession();
+  //   }, [session])
+  // );
 
   const handleSignup = async () => {
-    if(name === '' || username === '' || email === '' || password === ''){
+    if(email === '' || password === '' || confirmPassword === ''){
       Alert.alert('Error', 'Fill all the required fields')
+    } else if(password !== confirmPassword){
+      Alert.alert('Error', 'Passwords do not match');
     } else{
       try {
         const { data: userdata, error: signUpError } = await supabase.auth.signUp({
           email,
           password,
           options: {
-            data: {
-              full_name: name,
-              username: username,
-            },
-            emailRedirectTo: 'skillswap://Home',
+            emailRedirectTo: 'skillswap://CompleteProfile',
           },
         });  
         if (signUpError) throw signUpError;  
         Alert.alert('Success', 'Account created! Please check your email for confirmation.');
         setUser(userdata?.user);
-        try {
+        /* try {
           const { data: insertData, error: insertError } = await supabase.from('profiles').upsert({
             authid: userdata?.user?.id,
             name: name,
@@ -96,11 +100,12 @@ const SignupPage: React.FC = () => {
           // //     .upsert({ expo_token: token })
           // //     .eq('authid', userdata?.user?.id);
           // // }
+          router.replace('/(tabs)/Home');
           //navigation.navigate('Home');
         } catch (error: any) {
           Alert.alert('Error', error.message);
           clearUserData();
-        }
+        } */
       } catch (error: any) {
         Alert.alert('Error', error.message);
       } 
@@ -126,7 +131,7 @@ const SignupPage: React.FC = () => {
       <Text style={[styles.title, {color: textColor}]}>Sign Up</Text>
       <Image source={require('./logo.png')} style={styles.logo} />
       <View style = {styles.fields}>
-      <TextInput
+      {/* <TextInput
         style={[styles.input, {backgroundColor: inputColor}]}
         placeholder="Full Name *"
         value={name}
@@ -139,23 +144,54 @@ const SignupPage: React.FC = () => {
         value={username}
         onChangeText={setUserName}
         autoCapitalize="none"
-      />
+      /> */}
       <TextInput
         style={[styles.input, {backgroundColor: inputColor}]}
-        placeholder="Email *"
+        placeholder="Email "
         value={email}
         onChangeText={setEmail}
         keyboardType="email-address"
         autoCapitalize="none"
       />
+      <View style={{ width: '100%', alignItems: 'center', position: 'relative' }}>
       <TextInput
         style={[styles.input, {backgroundColor: inputColor}]}
-        placeholder="Password *"
+        placeholder="Password "
         value={password}
         onChangeText={setPassword}
-        secureTextEntry
+        secureTextEntry={!showPassword}
       />
+      <TouchableOpacity
+        style={styles.eyeButton}
+        onPress={() => setShowPassword(!showPassword)}
+      >
+        <Ionicons
+          name={showPassword ? 'eye' : 'eye-off'}
+          size={24}
+          color="#414141ff"
+        />
+      </TouchableOpacity>
+      </View>
+      <View style={{ width: '100%', alignItems: 'center', position: 'relative' }}>
       <TextInput
+        style={[styles.input, {backgroundColor: inputColor}]}
+        placeholder="Confirm Password "
+        value={confirmPassword}
+        onChangeText={setConfirmPassword}
+        secureTextEntry={!showConfirmPassword}
+      />
+      <TouchableOpacity
+        style={styles.eyeButton}
+        onPress={() => setShowConfirmPassword(!showConfirmPassword)}
+      >
+        <Ionicons
+          name={showConfirmPassword ? 'eye' : 'eye-off'}
+          size={24}
+          color="#414141ff"
+        />
+      </TouchableOpacity>
+      </View>
+      {/* <TextInput
         style={[styles.input, {backgroundColor: inputColor}]}
         placeholder="Skills Offered"
         value={skillsoffered}
@@ -166,13 +202,13 @@ const SignupPage: React.FC = () => {
         placeholder="Skills Required"
         value={skillsrequired}
         onChangeText={setSkillsReq}
-      />
+      /> */}
       </View>
       <TouchableOpacity style={[styles.button, {backgroundColor: buttonColor}]} onPress={handleSignup}>
         <Text style={[styles.buttonText, {color: buttonTextColor}]}>Sign Up</Text>
       </TouchableOpacity>
       <TouchableOpacity onPress={() => navigation.navigate('Login')}>
-        <Text style={styles.linkText}>Already have an account? Login</Text>
+        <Text style={[styles.linkText, {color: linkTextColor}]}>Already have an account? Login</Text>
       </TouchableOpacity>
       </View>
     </View>
@@ -207,11 +243,18 @@ const styles = StyleSheet.create({
   },
   input: { 
     width: '80%', 
-    padding: 10, 
+    height: 40,
+    // padding: 10, 
+    paddingRight: 50,
     borderWidth: 1, 
     borderColor: '#ccc', 
-    borderRadius: 8, 
+    borderRadius: 10, 
     marginBottom: 10 
+  },
+  eyeButton: {
+    position: 'absolute',
+    right: 50,
+    top: 10,
   },
   button: { 
     width: '25%', 
@@ -232,7 +275,7 @@ const styles = StyleSheet.create({
   },
   linkText: {
     fontSize: 16,
-    color: 'blue',
+    //color: 'blue',
     textAlign: 'center',
     //marginTop: 20,
     marginVertical: 15,

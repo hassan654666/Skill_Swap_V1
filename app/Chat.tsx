@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useRef, useCallback} from 'react';
-import { View, Text, TextInput, Button, Modal, FlatList, StyleSheet, useColorScheme, TouchableOpacity, Image, BackHandler, ActivityIndicator, Dimensions, Alert, SafeAreaView, KeyboardAvoidingView, ScrollView, Pressable } from 'react-native';
+import { View, Text, TextInput, Button, Modal, FlatList, StyleSheet, useColorScheme, TouchableOpacity, Image, BackHandler, ActivityIndicator, Dimensions, Alert, SafeAreaView, KeyboardAvoidingView, ScrollView, Pressable, Touchable } from 'react-native';
 import { format, parseISO } from 'date-fns';
 import { useNavigation, useLocalSearchParams, usePathname, useRouter } from 'expo-router';
 import { useIsFocused, useFocusEffect } from '@react-navigation/native';
@@ -8,7 +8,7 @@ import { supabase } from '@/lib/supabase';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { FontAwesome } from '@expo/vector-icons';
 import * as DocumentPicker from 'expo-document-picker';
-import { Audio } from 'expo-av';
+import { Audio, ResizeMode, Video } from 'expo-av';
 import * as FileSystem from "expo-file-system";
 import { decode } from 'base64-arraybuffer';
 import * as Sharing from "expo-sharing";
@@ -17,9 +17,12 @@ import * as Clipboard from "expo-clipboard";
 // import mime, { contentType } from "react-native-mime-types";
 //import * as Notifications from 'expo-notifications';
 import { Platform } from 'react-native';
+import { WebView } from 'react-native-webview';
+import * as WebBrowser from "expo-web-browser";
 import './Avatar.png';
 import '../assets/images/Avatar.png'
-import { he } from 'date-fns/locale';
+import { fi, he } from 'date-fns/locale';
+import AudioPlayer from '@/components/AudioPlayer';
 // import { TouchableWithoutFeedback } from 'react-native';
 
 let notifee: any = null;
@@ -51,6 +54,7 @@ export default function Chat() {
   const [deleteModalVisible, setDeleteModalVisible] = useState(false);
   const [deleteTargetMine, setDeleteTargetMine] = useState(false);
   const [replyTo, setReplyTo] = useState<string | null>(null);
+  const [replyingTo, setReplyingTo] = useState<any>(null);
   const navigation = useNavigation<any>();
   const router = useRouter();
   const colorScheme = useColorScheme();
@@ -68,6 +72,13 @@ export default function Chat() {
   const bubbleTwoColor = DarkMode ? '#015551' : '#1DCD9F';
   const flatListRef = useRef<any>();
   const isFocused = useIsFocused();
+
+  const [mediaPreviewVisible, setMediaPreviewVisible] = useState(false);
+  const [mediaPreviewUri, setMediaPreviewUri] = useState<string | null>(null);
+  const [mediaPreviewType, setMediaPreviewType] = useState<"image" | "video" | null>(null);
+
+  const [docViewerVisible, setDocViewerVisible] = useState(false);
+  const [docUrl, setDocUrl] = useState("");
 
   const senderId = userData?.id;
   //const route = useRoute<any>();
@@ -156,7 +167,7 @@ export default function Chat() {
     }
   };
 
-  const sendMessage = async (text = content, fileUrl: string | null = null, fileType: string | null = null) => {
+  const sendMessage = async (text = content, fileUrl: string | null = null, fileName: string | null = null, fileType: string | null = null) => {
     if (!content.trim() && !fileUrl && !fileType) return; // Prevent sending empty messages
 
     let activeChatId = thisChat_Id;
@@ -171,7 +182,7 @@ export default function Chat() {
     if (!activeChatId && inboxItems.length === 0) {
       const { data: newChat, error: chatInsertError } = await supabase
         .from('chat')
-        .insert([{ sender_Id: senderId, receiver_Id: receiverId, last_text: content, last_sender: senderId, updated_at: new Date() }])
+        .insert([{ sender_Id: senderId, receiver_Id: receiverId, last_text: content !== '' ? content : fileName, last_sender: senderId, updated_at: new Date() }])
         .select()
         .single();
   
@@ -185,7 +196,7 @@ export default function Chat() {
     } else {
       const { error: chatUpdateError } = await supabase
         .from('chat')
-        .update({ last_text: content, last_sender: senderId, updated_at: new Date() })
+        .update({ last_text: content !== '' ? content : fileName, last_sender: senderId, updated_at: new Date() })
         .eq('id', activeChatId);
       
       if (chatUpdateError) {
@@ -202,6 +213,7 @@ export default function Chat() {
       receiver_id: receiverId,
       text: text,
       file_url: fileUrl,
+      file_name: fileName,
       file_type: fileType,
       reply_to: replyTo,
     }]);
@@ -273,7 +285,7 @@ export default function Chat() {
         // If blob exists, optionally send again or double check — you can skip if base64 succeeded
 
         const fileUrl = supabase.storage.from("chat_files").getPublicUrl(data.path).data.publicUrl;
-        await sendMessage(content, fileUrl, file.mimeType);
+        await sendMessage(content, fileUrl, fileName, file.mimeType);
       }
     } catch (err: any) {
       console.error("confirmSendFiles error:", err);
@@ -282,6 +294,8 @@ export default function Chat() {
       setSelectedFiles([]);
       setPreviewVisible(false);
       setPreviewIndex(0);
+      setReplyTo(null); 
+      setReplyingTo(null);
     }
   };
 
@@ -339,7 +353,7 @@ export default function Chat() {
       }
 
       const fileUrl = supabase.storage.from("chat_files").getPublicUrl(data.path).data.publicUrl;
-      await sendMessage("", fileUrl, "audio/m4a");
+      await sendMessage("", fileUrl, fileName, "audio/m4a");
     } catch (err: any) {
       console.error("stopRecording upload error:", err);
       Alert.alert("Upload Failed", err.message);
@@ -348,18 +362,22 @@ export default function Chat() {
     }
   };
 
-  // ✅ Play Audio
-  const playAudio = async (uri: string) => {
-    const { sound } = await Audio.Sound.createAsync({ uri });
-    await sound.playAsync();
-  };
-
   // ✅ Open File
   const openFile = async (uri: string) => {
     if (await Sharing.isAvailableAsync()) {
       await Sharing.shareAsync(uri);
     } else {
       Alert.alert("Sharing not available");
+    }
+  };
+
+  const openDocument = async (url: string) => {
+    const googleViewerUrl = `https://docs.google.com/gview?embedded=true&url=${encodeURIComponent(url)}`;
+    try{
+      await WebBrowser.openBrowserAsync(googleViewerUrl);
+    } catch {
+      setDocUrl(googleViewerUrl);
+      setDocViewerVisible(true);
     }
   };
 
@@ -432,6 +450,20 @@ export default function Chat() {
     });
   };
 
+  const getFileIcon = (mimeType?: string) => {
+    if (!mimeType) return "file-o";
+    
+    if (mimeType.startsWith('image/')) return 'file-image-o';
+    if (mimeType.startsWith('video/')) return 'file-video-o';
+    if (mimeType.startsWith('audio/')) return 'file-audio-o';
+    if (mimeType.includes('pdf')) return 'file-pdf-o';
+    if (mimeType.includes('word') || mimeType.includes('document')) return 'file-word-o';
+    if (mimeType.includes('excel') || mimeType.includes('spreadsheet')) return 'file-excel-o';
+    if (mimeType.includes('zip') || mimeType.includes('compressed')) return 'file-archive-o';
+    
+    return 'file-o';
+  };
+
   function goToProfile(item?: any){
     router.push({
       pathname: '/UserProfile',
@@ -499,6 +531,7 @@ export default function Chat() {
     if (message) {
       // Show reply preview UI
       setReplyTo(message?.id);
+      setReplyingTo(message);
       console.log("Replying to:", message?.text);
     }
     exitSelection();
@@ -510,7 +543,7 @@ export default function Chat() {
     const message = messages.find((m: any) => m?.id === selectedMessages[0]);
     if (message) {
       await Clipboard.setStringAsync(message?.text || "");
-      Alert.alert("Copied", "Message copied to clipboard");
+      // Alert.alert("Copied", "Message copied to clipboard");
     }
     exitSelection();
   };
@@ -610,7 +643,7 @@ export default function Chat() {
     >
     <View style={[styles.container, {backgroundColor: backgroundColor}]}>
       <View style= {[styles.topbar, {backgroundColor: SecondaryBackgroundColor}]}>
-        <TouchableOpacity style= { {margin: 10, marginLeft: 15} } onPress={backAction}>
+        <TouchableOpacity style= { {margin: 10, marginLeft: 5, paddingHorizontal: 10} } onPress={backAction}>
           <FontAwesome name="arrow-left" size={20} color={textColor} />
         </TouchableOpacity>
         <TouchableOpacity onPress={() => goToProfile(Receiver[0])} style={styles.userhead}>
@@ -682,63 +715,164 @@ export default function Chat() {
                 }
               style={[item?.sender_id === senderId ? [styles.userBubble, {backgroundColor: bubbleOneColor, opacity: isSelected ? 1 : 1}] : [styles.receiverBubble, {backgroundColor: bubbleTwoColor, opacity: isSelected ? 1 : 1}]
               ]}>
+              
               <View style={ styles.msg }>
 
               {/* Reply Preview */}
               {repliedMessage && (
                 <TouchableOpacity
-                  onPress={() => scrollToMessage(repliedMessage?.id)}
+                  onPress={() => {
+                    if(selectedMessages.length > 0 ) {
+                      toggleSelectMessage(item?.id)
+                      return;
+                    }else{
+                      scrollToMessage(repliedMessage?.id)
+                    }
+                  }}
+                  onLongPress={() => toggleSelectMessage(item?.id)}
                   activeOpacity={0.7}
                   style={[styles.replyPreview, {backgroundColor: TertiaryBackgroundColor, borderLeftColor: mine ? bubbleOneColor : bubbleTwoColor}]}
                 >
+                  <FontAwesome name="reply" size={16} style={{color: textColor, marginBottom: 4}} />
                   {repliedMessage?.file_type?.startsWith("image/") && (
-                  <TouchableOpacity onPress={() => { setPreviewUri(repliedMessage.file_url); setPreviewVisible(true); }}>
-                    <Image source={{ uri: repliedMessage.file_url }} style={{ width: 150, height: 150, borderRadius: 8 }} />
-                    {/* <Text>{repliedMessage.text}</Text> */}
-                  </TouchableOpacity>
+                  <View style={{ width: 100, height: 'auto', position: "relative", justifyContent: "center", alignItems: "center" }}>
+                    <Image source={{ uri: repliedMessage.file_url }} style={{ width: 100, height: 100, borderRadius: 8 }} />
+                    {/* <Text>{repliedMessage.file_name}</Text> */}
+                  </View>
                   )}
                   {repliedMessage?.file_type?.startsWith("video/") && (
-                  <TouchableOpacity onPress={() => { setPreviewUri(repliedMessage.file_url); setPreviewVisible(true); }}>
-                    <Image source={{ uri: repliedMessage.file_url }} style={{ width: 150, height: 150, borderRadius: 8 }} />
+                  <View style={{ width: 100, height: 'auto', position: "relative", justifyContent: "center", alignItems: "center" }}>
+                    <Video source={{ uri: repliedMessage.file_url }} style={{ width: 100, height: 100, borderRadius: 8 }} />
                     {/* <Text>{repliedMessage.text}</Text> */}
-                  </TouchableOpacity>
+                  </View>
                   )}
                   {repliedMessage?.file_type?.startsWith("audio/") && (
-                    <TouchableOpacity onPress={() => playAudio(repliedMessage.file_url)}>
-                      <FontAwesome name="play" size={24} style={{color: textColor}} />
-                    </TouchableOpacity>
+                    <View>
+                      <AudioPlayer url={repliedMessage.file_url} DarkMode={DarkMode} Disabled={true}/>
+                      {/* <Text style={{ textAlign: "center", color: textColor }}>{repliedMessage.file_name}</Text> */}
+                    </View>
                   )}
-                  {repliedMessage?.file_type && !repliedMessage.file_type.startsWith("image/") && !repliedMessage.file_type.startsWith("audio/") && (
-                    <TouchableOpacity onPress={() => openFile(repliedMessage.file_url)}>
-                      <FontAwesome name="file" size={24} style={{color: textColor}} />
-                      {/* <Text>{repliedMessage.text || "Open File"}</Text> */}
-                    </TouchableOpacity>
+                  {repliedMessage?.file_type && !repliedMessage.file_type.startsWith("image/") && !repliedMessage.file_type.startsWith("audio/") && !repliedMessage.file_type.startsWith("video/") && (
+                    <View style={{ width: 100, height: 'auto', position: "relative", justifyContent: "center", alignItems: "center" }}>
+                      <FontAwesome name={getFileIcon(repliedMessage?.file_type)} size={24} style={{color: textColor}} />
+                      <Text style={{ textAlign: "center", color: textColor }}>{repliedMessage.file_name}</Text>
+                    </View>
                   )}
                   {repliedMessage.text ? <Text style={[styles.textmsg, { color: textColor}]}>{repliedMessage.text}</Text> : null}
                 </TouchableOpacity>
               )}
 
               {item.file_type?.startsWith("image/") && (
-                <TouchableOpacity onPress={() => { setPreviewUri(item.file_url); setPreviewVisible(true); setSelectedFiles([{ uri: item.file_url, name: getFileNameFromUri(item.file_url), mimeType: item.file_type }]); setPreviewIndex(0); }}>
+                <TouchableOpacity onPress={() => {
+                    if(selectedMessages.length > 0 ) {
+                      toggleSelectMessage(item?.id)
+                      return;
+                    }else{
+                      setMediaPreviewUri(item.file_url);
+                      setMediaPreviewType("image");
+                      setMediaPreviewVisible(true);
+                    }
+                  }}
+                  onLongPress={() => toggleSelectMessage(item?.id)}>
                   <Image source={{ uri: item.file_url }} style={{ width: 150, height: 150, borderRadius: 8 }} />
-                  {/* <Text>{item.text}</Text> */}
+                  {/* <Text style={{ textAlign: "center", color: textColor }}>{item.file_name}</Text> */}
                 </TouchableOpacity>
               )}
               {item.file_type?.startsWith("video/") && (
-                <TouchableOpacity onPress={() => { setPreviewUri(item.file_url); setPreviewVisible(true); setSelectedFiles([{ uri: item.file_url, name: getFileNameFromUri(item.file_url), mimeType: item.file_type }]); setPreviewIndex(0); }}>
-                  <Image source={{ uri: item.file_url }} style={{ width: 150, height: 150, borderRadius: 8 }} />
-                  {/* <Text>{item.text}</Text> */}
+
+                <TouchableOpacity onPress={() => {
+                  if(selectedMessages.length > 0 ) {
+                      toggleSelectMessage(item?.id)
+                      return;
+                    }else{
+                    setMediaPreviewUri(item.file_url);
+                    setMediaPreviewType("video");
+                    setMediaPreviewVisible(true);
+                    }
+                  }}
+                  onLongPress={() => toggleSelectMessage(item?.id)}>
+                  <View style={{ width: 150, height: 150, position: "relative", justifyContent: "center", alignItems: "center" }}>
+                    <Video source={{ uri: item.file_url }} style={{ width: '100%', height: '100%', borderRadius: 8}} resizeMode={ResizeMode.COVER} />
+                    <View
+                      style={{
+                        position: "absolute",
+                        top: "50%",
+                        left: "50%",
+                        transform: [{ translateX: -15 }, { translateY: -15 }],
+                        backgroundColor: "rgba(0,0,0,0.5)",
+                        padding: 15,
+                        borderRadius: 25,
+                      }}
+                    >
+                      <FontAwesome name="play" size={20} color="#fff" />
+                    </View>
+                  </View>
+                  {/* <Text style={{ textAlign: "center", color: textColor }}>{item.file_name}</Text> */}
                 </TouchableOpacity>
               )}
               {item.file_type?.startsWith("audio/") && (
-                <TouchableOpacity onPress={() => playAudio(item.file_url)}>
-                  <FontAwesome name="play" size={24} style={{color: textColor}} />
+                <View style={{ minWidth: 200, height: 'auto', position: "relative", justifyContent: "center", alignItems: "center" }}>
+                  <AudioPlayer url={item.file_url} DarkMode={DarkMode}/>
+                  {/* <Text style={{ textAlign: "center", color: textColor }}>{item.file_name}</Text> */}
+                </View>
+              )}
+              {item.file_type === "application/msword" && (
+                <TouchableOpacity onPress={() => {
+                  if(selectedMessages.length > 0 ) {
+                      toggleSelectMessage(item?.id)
+                      return;
+                    }else{ 
+                      openDocument(item.file_url) 
+                    }
+                  }}
+                onLongPress={() => toggleSelectMessage(item?.id)}
+                style={{ width: 100, height: 100, position: "relative", justifyContent: "center", alignItems: "center" }}>
+                  <FontAwesome name={getFileIcon(item?.file_type)} size={24} style={{color: textColor}} />
+                  <Text style={{ textAlign: "center", color: textColor }}>{item.file_name}</Text>
                 </TouchableOpacity>
               )}
-              {item.file_type && !item.file_type.startsWith("image/") && !item.file_type.startsWith("audio/") && !item.file_type.startsWith("video/") && (
-                <TouchableOpacity onPress={() => openFile(item.file_url)}>
-                  <FontAwesome name="file" size={24} style={{color: textColor}} />
-                  {/* <Text>{item.text || "Open File"}</Text> */}
+              {item.file_type === "application/vnd.openxmlformats-officedocument.wordprocessingml.document" && (
+                <TouchableOpacity onPress={() => {
+                  if(selectedMessages.length > 0 ) {
+                      toggleSelectMessage(item?.id)
+                      return;
+                    }else{ 
+                      openDocument(item.file_url) 
+                    }
+                  }}
+                onLongPress={() => toggleSelectMessage(item?.id)}
+                style={{ width: 100, height: 100, position: "relative", justifyContent: "center", alignItems: "center" }}>
+                  <FontAwesome name={getFileIcon(item?.file_type)} size={24} style={{color: textColor}} />
+                  <Text style={{ textAlign: "center", color: textColor }}>{item.file_name}</Text>
+                </TouchableOpacity>
+              )}
+              {item.file_type === "application/pdf" && (
+                <TouchableOpacity onPress={() => { 
+                  if(selectedMessages.length > 0 ) {
+                      toggleSelectMessage(item?.id)
+                      return;
+                    }else{
+                      openDocument(item.file_url) 
+                    }
+                  }}
+                onLongPress={() => toggleSelectMessage(item?.id)}
+                style={{ width: 100, height: 100, position: "relative", justifyContent: "center", alignItems: "center" }}>
+                  <FontAwesome name={getFileIcon(item?.file_type)} size={24} style={{color: textColor}} />
+                  <Text style={{ textAlign: "center", color: textColor }}>{item.file_name}</Text>
+                </TouchableOpacity>
+              )}
+              {item.file_type && !item.file_type.startsWith("image/") && !item.file_type.startsWith("audio/") && !item.file_type.startsWith("video/") && item.file_type !== "application/msword" && item.file_type !== "application/vnd.openxmlformats-officedocument.wordprocessingml.document" && item.file_type !== "application/pdf" && (
+                <TouchableOpacity onPress={() => {if(selectedMessages.length > 0 ) {
+                      toggleSelectMessage(item?.id)
+                      return;
+                    }else{
+                      openDocument(item.file_url)
+                    }
+                  }}
+                onLongPress={() => toggleSelectMessage(item?.id)}
+                style={{ width: 100, height: 100, position: "relative", justifyContent: "center", alignItems: "center" }}>
+                  <FontAwesome name={getFileIcon(item?.file_type)} size={24} style={{color: textColor}} />
+                  <Text style={{ textAlign: "center", color: textColor }}>{item.file_name}</Text>
                 </TouchableOpacity>
               )}
               {item.text ? <Text style={[styles.textmsg, { color: textColor}]}>{item.text}</Text> : null}
@@ -795,7 +929,7 @@ export default function Chat() {
               ) : (
                 <>
                   <View style={{ width: '100%', height: '100%', justifyContent: 'center', alignItems: 'center' }}>
-                    <FontAwesome name="file" size={72} color="#fff" />
+                    <FontAwesome name={getFileIcon(selectedFiles[previewIndex]?.mimeType)} size={72} color="#fff" />
                     <Text style={{ color: "#fff", marginTop: 12, textAlign: 'center' }}>
                       {selectedFiles[previewIndex].name || getFileNameFromUri(selectedFiles[previewIndex].uri)}
                     </Text>
@@ -821,7 +955,7 @@ export default function Chat() {
                         <Image source={{ uri: file.uri }} style={{ width: 70, height: 70, borderRadius: 8 }} resizeMode="cover" />
                       ) : (
                         <View style={{ width: 70, height: 70, borderRadius: 8, backgroundColor: 'rgba(255,255,255,0.06)', justifyContent: 'center', alignItems: 'center' }}>
-                          <FontAwesome name="file" size={32} color="#fff" />
+                          <FontAwesome name={getFileIcon(file?.mimeType)} size={32} color="#fff" />
                           <Text numberOfLines={1} style={{ color: textColor, width: 70, textAlign: 'center', marginTop: 6 }}>
                             {file.name || getFileNameFromUri(file.uri)}
                           </Text>
@@ -862,6 +996,94 @@ export default function Chat() {
         </Modal>
       )}
 
+      {/* Media preview modal (images & videos) */}
+      <Modal
+        visible={mediaPreviewVisible}
+        transparent={true}
+        animationType="fade"
+        onRequestClose={() => setMediaPreviewVisible(false)}
+      >
+        <View style={{ flex: 1, backgroundColor: "rgba(0,0,0,0.95)", justifyContent: "center", alignItems: "center" }}>
+          <TouchableOpacity
+            style={{ position: "absolute", top: 36, left: 18, zIndex: 30 }}
+            onPress={() => setMediaPreviewVisible(false)}
+          >
+            <FontAwesome name="arrow-left" size={24} color="#fff" />
+          </TouchableOpacity>
+
+          {mediaPreviewType === "image" && mediaPreviewUri && (
+            <Image source={{ uri: mediaPreviewUri }} style={{ width: "95%", height: "85%" }} resizeMode="contain" />
+          )}
+
+          {mediaPreviewType === "video" && mediaPreviewUri && (
+            <Video
+              source={{ uri: mediaPreviewUri }}
+              useNativeControls
+              shouldPlay
+              resizeMode={ResizeMode.CONTAIN}
+              style={{ width: '95%' , height: "95%" }}
+            />
+          )}
+        </View>
+      </Modal>
+
+
+      <Modal visible={docViewerVisible} animationType="slide">
+        <SafeAreaView style={{ flex: 1 }}>
+          <TouchableOpacity
+            onPress={() => setDocViewerVisible(false)}
+            style={{ padding: 10, backgroundColor: "#575757ff" }}
+          >
+            <Text style={{ color: "#fff" }}>Close</Text>
+          </TouchableOpacity>
+
+          <WebView 
+            source={{ uri: docUrl }} 
+            style={{ flex: 1 }} 
+             originWhitelist={['*']}
+             javaScriptEnabled
+             domStorageEnabled
+          />
+        </SafeAreaView>
+      </Modal>
+
+      {replyingTo && (
+      
+        <View
+          style={[styles.replyingPreview, {backgroundColor: TertiaryBackgroundColor}]}
+        >
+          <View style={[{flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', padding: 8}]}>
+            <FontAwesome name="reply" size={16} style={{color: textColor, marginBottom: 4}} />
+            <FontAwesome name="close" size={20} style={{color: textColor, marginBottom: 4}} onPress={() => { setReplyTo(null); setReplyingTo(null); }}/>
+          </View>
+          {replyingTo?.file_type?.startsWith("image/") && (
+          <View style={{ width: 100, height: 'auto', position: "relative", justifyContent: "center", alignItems: "center" }}>
+            <Image source={{ uri: replyingTo.file_url }} style={{ width: 50, height: 50, borderRadius: 8 }} />
+            {/* <Text>{repliedMessage.file_name}</Text> */}
+          </View>
+          )}
+          {replyingTo?.file_type?.startsWith("video/") && (
+          <View style={{ width: 100, height: 'auto', position: "relative", justifyContent: "center", alignItems: "center" }}> 
+            <Video source={{ uri: replyingTo.file_url }} style={{ width: 50, height: 50, borderRadius: 8 }} />
+            {/* <Text>{repliedMessage.text}</Text> */}
+          </View>
+          )}
+          {replyingTo?.file_type?.startsWith("audio/") && (
+            <View>
+              <AudioPlayer url={replyingTo.file_url} DarkMode={DarkMode} Disabled={true}/>
+              {/* <Text style={{ textAlign: "center", color: textColor }}>{replyingTo.file_name}</Text> */}
+            </View>
+          )}
+          {replyingTo?.file_type && !replyingTo.file_type.startsWith("image/") && !replyingTo.file_type.startsWith("audio/") && !replyingTo.file_type.startsWith("video/") && (
+            <View style={{ width: 100, height: 'auto', position: "relative", justifyContent: "center", alignItems: "center" }}>
+              <FontAwesome name={getFileIcon(replyingTo?.file_type)} size={24} style={{color: textColor}} />
+              <Text style={{ textAlign: "center", color: textColor }}>{replyingTo.file_name}</Text>
+            </View>
+          )}
+          {replyingTo.text ? <Text style={[styles.textmsg, { color: textColor}]}>{replyingTo.text}</Text> : null}
+        </View>  
+      )}
+
       <View style={[styles.inputArea, {backgroundColor: backgroundColor}]}>
         <TouchableOpacity style={styles.button} onPress={pickFiles}>
           <FontAwesome name="paperclip" size={24} color={textColor} />
@@ -882,10 +1104,10 @@ export default function Chat() {
           numberOfLines={10}
         />
 
-        <TouchableOpacity style={styles.button} onPress={recording ? stopRecording : startRecording}>
+        <TouchableOpacity style={styles.button} onPress={recording ? () => {stopRecording(); setReplyTo(null); setReplyingTo(null);} : startRecording}>
           <FontAwesome name={recording ? "stop" : "microphone"} size={24} color={textColor} />
         </TouchableOpacity>
-        <TouchableOpacity style={styles.button} onPress={() => sendMessage()}>
+        <TouchableOpacity style={styles.button} onPress={() => {sendMessage(); setReplyTo(null); setReplyingTo(null);}}>
           <FontAwesome name="send" size={24} color={textColor} />
         </TouchableOpacity>
       </View>
@@ -898,6 +1120,7 @@ export default function Chat() {
 
 const styles = StyleSheet.create({
   container: {
+    width: width,
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
@@ -1133,6 +1356,15 @@ const styles = StyleSheet.create({
     marginVertical: 4,
     borderRadius: 10,
     padding: 10,
+  },
+  replyingPreview: {
+    minWidth: 100,
+    height: 'auto',
+    opacity: 0.8,
+    padding: 2,
+    paddingLeft: 4,
+    marginBottom: 4,
+    borderRadius: 10,
   },
   replyPreview: {
     width: '100%',

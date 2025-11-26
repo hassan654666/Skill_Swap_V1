@@ -5,6 +5,7 @@ import { Platform, AppState, Linking } from "react-native";
 import { useNavigation } from "@react-navigation/native";
 import { router, usePathname, useLocalSearchParams } from "expo-router";
 import { supabase } from "@/lib/supabase";
+// import { useUserContext } from "@/components/UserContext";
 
 export interface PushNotificationState {
   notification?: Notifications.Notification;
@@ -34,6 +35,8 @@ try {
 export const usePushNotifications = (): PushNotificationState => {
   const [notification, setNotification] = useState<Notifications.Notification | undefined>();
   const [fcmNotification, setFcmNotification] = useState<any>(undefined);
+
+  // const { userData } = useUserContext();
 
   const notificationListener = useRef<Notifications.Subscription>();
   const responseListener = useRef<Notifications.Subscription>();
@@ -233,6 +236,7 @@ export const usePushNotifications = (): PushNotificationState => {
       const chatId = notificationData?.chat_Id;
       const receiverId = notificationData?.receiver_id;
       const senderId = notificationData?.sender_id;
+      const meetingId = notificationData?.meeting_id;
 
       console.log("Redirecting with data:", notificationData);
 
@@ -257,6 +261,27 @@ export const usePushNotifications = (): PushNotificationState => {
           dismissChatNotifications(chatId);
           //await clearAllNotifications();
         }
+
+        // if (meetingId !== '' && meetingId != null) {
+        //   const { data: schedule, error: scheduleError } = await supabase
+        //   .from("schedules")
+        //   .select("*")
+        //   .eq("meeting_id", meetingId)
+        //   .single()
+        //   if(scheduleError) console.error('Error fetching schedule: ', scheduleError);
+
+        //   const updatedjoined = Array.isArray(schedule?.joined)
+        //     ? [...new Set([...schedule.joined, userData?.id])]
+        //     : [userData?.id];
+
+        //   const { data: sched, error: schedError } = await supabase
+        //   .from("schedules")
+        //   .update({ joined:  updatedjoined})
+        //   .eq("meeting_id", schedule.meeting_id)
+        //   .single()
+        //   if(schedError) console.error('Error marking meeting joined: ', schedError);
+        // }
+        
       } catch (redirectingError) {
         // Reset redirecting flag
         //setTimeout(() => {

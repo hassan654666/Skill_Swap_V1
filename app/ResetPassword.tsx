@@ -12,7 +12,7 @@ export default function ResetPassword() {
   const [loading, setLoading] = useState(true);
   const [localUserData, setLocalUserData] = useState<any>(null);
 
-  const { DarkMode } = useUserContext();
+  const { isRecovery, setIsRecovery, DarkMode } = useUserContext();
   const colorScheme = useColorScheme();
   const router = useRouter();
 
@@ -36,7 +36,7 @@ export default function ResetPassword() {
         url = await Linking.getInitialURL();
       }
       console.log('Deep link URL:', url);
-      Alert.alert('Deep link URL:', url);
+      // Alert.alert('Deep link URL:', url);
 
       // 1️⃣ Check existing session first
       const { data: existingSession } = await supabase.auth.getSession();
@@ -53,6 +53,11 @@ export default function ResetPassword() {
         const params = new URLSearchParams(hash);
         const access_token = params.get('access_token');
         const refresh_token = params.get('refresh_token');
+        const type = params.get('type');
+        const isRecovery = type === 'recovery';
+        if (type === 'recovery') {
+          setIsRecovery(true);
+        }
 
         if (access_token && refresh_token) {
           const { data, error } = await supabase.auth.setSession({
@@ -107,6 +112,10 @@ export default function ResetPassword() {
   }, [userEmail]);
 
   const backAction = () => {
+    if (isRecovery){
+      BackHandler.exitApp();
+      return true;
+    }
     if (router.canGoBack()) {
       router.back();
     } else {
@@ -136,6 +145,8 @@ export default function ResetPassword() {
       const { error } = await supabase.auth.updateUser({ password: newPassword });
       if (error) throw error;
 
+      setIsRecovery(false);
+      // await supabase.auth.signOut();
       Alert.alert('Success', 'Password reset successfully!');
       router.replace('/Login');
     } catch (err: any) {

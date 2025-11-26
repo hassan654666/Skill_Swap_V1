@@ -1,5 +1,5 @@
 import { Text, View, StyleSheet, TouchableOpacity, useColorScheme, Image, FlatList, Alert, Dimensions, BackHandler, Modal } from 'react-native';
-import { useFocusEffect, useNavigation } from 'expo-router';
+import { useRouter, useFocusEffect, useNavigation } from 'expo-router';
 import { useCallback, useEffect, useState } from 'react';
 import { useUserContext } from '@/components/UserContext';
 import { FontAwesome } from '@expo/vector-icons';
@@ -8,19 +8,26 @@ import { supabase } from '@/lib/supabase';
 import { Calendar } from 'react-native-calendars';
 //import DateTimePicker from '@react-native-community/datetimepicker';
 import DateTimePickerModal from 'react-native-modal-datetime-picker';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const { width, height } = Dimensions.get("window");
 
 export default function Schedule() {
   const { userData, usersData, DarkMode } = useUserContext();
   const navigation = useNavigation<any>();
+  const router = useRouter();
   const [meetings, setMeetings] = useState<any[]>([]);
   const [request, setRequest] = useState<any>(null);
-  const [selectedDate, setSelectedDate] = useState<string | null>(null);
+  const [selectedDate, setSelectedDate] = useState<string | null>(toCalendarDateString(new Date()));
   const [drawerVisible, setDrawerVisible] = useState(false);
   const [rescheduleModal, setRescheduleModal] = useState(false);
   const [selectedMeeting, setSelectedMeeting] = useState<any>(null);
   const [newDateTime, setNewDateTime] = useState(new Date());
+  const [showList, setShowList] = useState(false);
+  const [selectUserModal, setSelectUserModal] = useState(false);
+  const [selectedUser, setSelectedUser] = useState<any>(null);
+  const [showPicker, setShowPicker] = useState(false);
+  const [message, setMessage] = useState('');
 
   // 🎨 Color palette
   const textColor = DarkMode ? "#fff" : "#000";
@@ -34,6 +41,23 @@ export default function Schedule() {
   const buttonTextColor = "#fff";
   const bubbleOneColor = DarkMode ? '#183B4E' : '#3D90D7';
   const bubbleTwoColor = DarkMode ? '#015551' : '#1DCD9F';
+  
+  const CACHE_KEY = `user_schedule${userData.id}`;
+
+  useEffect(() => {
+    const loadCachedSchedule = async () => {
+      try {
+        const cachedData = await AsyncStorage.getItem(CACHE_KEY);
+        if (cachedData) {
+          const parsedData = JSON.parse(cachedData);
+          setMeetings(parsedData);
+        }
+      } catch (error) {
+        console.error('Failed to load cached schedule:', error);
+      }
+    };
+    loadCachedSchedule();
+  }, [userData?.id]);
 
   // 🗓️ Fetch meetings
   const fetchMeetings = async () => {
@@ -42,8 +66,12 @@ export default function Schedule() {
       .select('*')
       .or(`user_id.eq.${userData?.id},partner_id.eq.${userData?.id}`)
       .order('datetime', { ascending: true });
-    if (error) console.error(error);
-    else setMeetings(data || []);
+    if (error) {
+      console.error(error);
+    } else {
+      setMeetings(data || []);
+      await AsyncStorage.setItem(CACHE_KEY, JSON.stringify(data));
+    }
   };
 
   useEffect(() => {
@@ -57,7 +85,20 @@ export default function Schedule() {
           event: '*',
           schema: 'public',
           table: 'schedules',
-          filter: `or(user_id.eq.${userData?.id},partner_id.eq.${userData?.id})`,
+          filter: `user_id=eq.${userData?.id}`,
+        },
+        (payload) => {
+          if(!payload.new) return;
+          fetchMeetings();
+        }
+      )
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'schedules',
+          filter: `partner_id=eq.${userData?.id}`,
         },
         (payload) => {
           if(!payload.new) return;
@@ -72,22 +113,54 @@ export default function Schedule() {
   }, [userData?.id]);
 
   // ❌ Cancel meeting
-  const handleCancel = async (meetingId: string) => {
+  const handleCancel = async (meeting: any) => {
     Alert.alert('Cancel Meeting', 'Are you sure you want to cancel this meeting?', [
       { text: 'No' },
       {
         text: 'Yes',
         onPress: async () => {
-          const { error } = await supabase.from('schedules').delete().eq('id', meetingId);
+          const { error: notifyError } = await supabase.from("notifications").insert({
+            user_id: userData.id === meeting.user_id
+              ? meeting.partner_id
+              : meeting.user_id,
+            type: "canceled",
+            title: "Meeting Canceled",
+            message: "Your meeting has been canceled",
+            meeting_id: meeting.meeting_id,
+            read: false,
+          });
+          if (notifyError) Alert.alert("Error", notifyError.message);
+
+          const { error } = await supabase.from('schedules').delete().eq('id', meeting.id);
           if (error) Alert.alert('Error', error.message);
           else {
-            setMeetings((prev) => prev.filter((m) => m.id !== meetingId));
+            setMeetings((prev) => prev.filter((m) => m.id !== meeting.id));
             Alert.alert('Success', 'Meeting canceled successfully.');
           }
         },
       },
     ]);
   };
+
+  // to check for exact conflicts
+  async function hasExactConflict(userId: string, isoDateTime: string) {
+
+    const proposed = new Date(isoDateTime);
+
+    const lower = new Date(proposed.getTime() - 60 * 60 * 1000).toISOString();
+    const upper = new Date(proposed.getTime() + 60 * 60 * 1000).toISOString();
+
+    const { data, error } = await supabase
+      .from('schedules')
+      .select('id')
+      .or(`user_id.eq.${userId},partner_id.eq.${userId}`)
+      .gte('datetime', lower)
+      .lte('datetime', upper)
+      .limit(1);
+
+    if (error) throw error;
+    return (data && data.length > 0);
+  }
 
   // 🔁 Reschedule meeting
   const handleReschedule = async (meeting: any) => {
@@ -103,7 +176,7 @@ export default function Schedule() {
     if (requestData?.reschedule_of) {
       Alert.alert(
         "Rescheduling Not Allowed",
-        "This meeting has already been rescheduled once.",
+        'This meeting has already been rescheduled once.',
         [{ text: "OK" }]
       );
       return;
@@ -119,6 +192,15 @@ export default function Schedule() {
       return;
     }
 
+    // usage before sending request
+    const iso = date.toISOString();
+    const conflictRequester = await hasExactConflict(selectedMeeting?.user_id, iso);
+    const conflictReceiver = await hasExactConflict(selectedMeeting?.partner_id, iso);
+    if (conflictRequester || conflictReceiver) {
+      Alert.alert('Scheduling conflict', 'Either you or the other user already has a meeting at that time.');
+      return;
+    }
+
     const { error } = await supabase.from("meeting_requests").insert([
       {
         requester_id: userData.id,
@@ -126,8 +208,10 @@ export default function Schedule() {
           userData.id === selectedMeeting.user_id
             ? selectedMeeting.partner_id
             : selectedMeeting.user_id,
-        proposed_datetime: date.toISOString(),
+        proposed_datetime: iso,
+        message: request?.message || null,
         reschedule_of: request.id,
+        zoom_link: request?.zoom_link || null,
         status: "pending",
       },
     ]);
@@ -139,10 +223,115 @@ export default function Schedule() {
     setSelectedMeeting(null);
   };
 
+  const showDatePicker = () => setShowPicker(true);
+  const hideDatePicker = () => setShowPicker(false);
+  
+  // const handleDateChange = (date?: Date) => {
+  //   hideDatePicker();
+  //   if (date) {
+  //     setSelectedDate(date);
+  //   }
+  // };
+
+  async function requestMeeting(date: Date) {
+    if (!date) {
+      Alert.alert('Select a Date & Time', 'Please choose a date and time first.');
+      return;
+    }
+
+    // usage before sending request
+    const iso = date.toISOString();
+    const conflictRequester = await hasExactConflict(userData.id, iso);
+    const conflictReceiver = await hasExactConflict(selectedUser?.id, iso);
+    if (conflictRequester || conflictReceiver) {
+      Alert.alert('Scheduling conflict', 'Either you or the other user already has a meeting at that time.');
+      return;
+    }
+    // proceed to insert meeting_requests
+
+    try {
+      const { data, error } = await supabase
+        .from('meeting_requests')
+        .insert([
+          {
+            requester_id: userData?.id,
+            receiver_id: selectedUser?.id,
+            proposed_datetime: iso,
+            status: 'pending',
+            message: message || null,
+          },
+        ])
+        .select()
+        .single();
+
+      if (error) throw error;
+
+      Alert.alert('Success', 'Meeting request sent successfully!');
+      // setSelectedDate(new Date());
+      setMessage('');
+    } catch (err: any) {
+      console.error(err);
+      Alert.alert('Error', err.message || 'Failed to send meeting request');
+    }
+
+    setShowList(false);
+    setSelectedUser(null);
+  }
+
+  const JoinMeeting = async (meeting: any) => {
+    const { data, error } = await supabase
+    .from("meetings")
+    .select("*")
+    .eq("meeting_id", meeting.meeting_id)
+    .single()
+    if(error) console.error('Error fetching meeting: ', error);
+
+    if(data.status !== "Missed" && data.status !== "Completed"){
+      const updatedjoined = Array.isArray(meeting?.joined)
+        ? [...new Set([...meeting.joined, userData?.id])]
+        : [userData?.id];
+
+      const { data: sched, error: schedError } = await supabase
+      .from("schedules")
+      .update({ joined:  updatedjoined})
+      .eq("meeting_id", meeting.meeting_id)
+      .single()
+      if(schedError) console.error('Error marking meeting joined: ', schedError);
+
+      const partnerId = data.host_id === userData?.id ? data.guest_id : data.host_id;
+      router.push({
+        pathname: '/Meeting',
+        params: { 
+          partnerId: partnerId, 
+          meetingId: data.zoom_meeting_id, 
+          password: data.zoom_password, 
+          Link: data.zoom_join_url 
+        },
+      });
+    }
+  }
+
+  // YYYY-MM-DD format for Calendar keys
+function toCalendarDateString(dateString: string | Date) {
+  const date = new Date(dateString);
+  return date.getFullYear() + '-' +
+         String(date.getMonth() + 1).padStart(2, '0') + '-' +
+         String(date.getDate()).padStart(2, '0');
+}
+
+// Optional: DD-MM-YYYY for display
+function toDisplayDate(dateString: string | Date) {
+  const date = new Date(dateString);
+  return String(date.getDate()).padStart(2, '0') + '-' +
+         String(date.getMonth() + 1).padStart(2, '0') + '-' +
+         date.getFullYear();
+}
+
 
   // 📆 Calendar mark
   const markedDates = meetings.reduce((acc, meeting) => {
-    const date = new Date(meeting.datetime).toISOString().split('T')[0];
+    //const date = new Date(meeting.datetime).toISOString().split('T')[0];
+    const date = toCalendarDateString(meeting.datetime); // local date now
     acc[date] = {
       marked: true,
       dotColor: linkTextColor,
@@ -193,13 +382,14 @@ export default function Schedule() {
               🕒 {new Date(item.datetime).toLocaleTimeString()}
             </Text>
             <Text style={{ color: textColor }}>
-              📅 {new Date(item.datetime).toLocaleDateString()}
+              {/* 📅 {new Date(item.datetime).toLocaleDateString()} */}
+              📅 {toDisplayDate(item.datetime)}
             </Text>
-            <Text style={{ color: textColor }}>Status: {item.status}</Text>
+            <Text style={{ fontSize: 16, color: textColor }}>Status: {item.status}</Text>
           </View>
         </View>
 
-        <View style={{ flexDirection: 'row', marginTop: 10, justifyContent: 'space-around' }}>
+        {(item.status !== 'Missed' && item.status !== 'Completed' && item.status !== 'Online') && (<View style={{ flexDirection: 'row', marginTop: 10, justifyContent: 'space-around' }}>
           <TouchableOpacity
             style={[styles.button, { backgroundColor: buttonColor }]}
             onPress={() => handleReschedule(item)}
@@ -208,17 +398,45 @@ export default function Schedule() {
           </TouchableOpacity>
           <TouchableOpacity
             style={[styles.button, { backgroundColor: redButton }]}
-            onPress={() => handleCancel(item.id)}
+            onPress={() => handleCancel(item)}
           >
             <Text style={{ color: buttonTextColor }}>Cancel</Text>
           </TouchableOpacity>
-        </View>
+        </View>)}
+
+        {(item.status === 'Online') && (<View style={{ flexDirection: 'row', marginTop: 10, justifyContent: 'space-around' }}>
+          <TouchableOpacity
+            style={[styles.button, { backgroundColor: buttonColor }]}
+            onPress={() => JoinMeeting(item)}
+          >
+            <Text style={{ color: buttonTextColor }}>Join</Text>
+          </TouchableOpacity>
+        </View>)}
+
       </View>
     );
   };
 
+  const renderUser=({ item }: any) => (
+          <TouchableOpacity
+            style={styles.userItem}
+            onPress={() => {
+              setSelectedUser(item);
+              // setShowList(false);
+              setShowPicker(true); // ➜ open date-time picker instantly
+            }}
+          >
+            <Image
+              source={item.avatar_url ? { uri: item.avatar_url } : require('../Avatar.png')}
+              style={styles.avatar}
+            />
+            <Text style={{ color: textColor, fontSize: 16 }}>{item.name}</Text>
+          </TouchableOpacity>
+        )
+
   const filteredMeetings = selectedDate
-    ? meetings.filter((m) => new Date(m.datetime).toISOString().split('T')[0] === selectedDate)
+    // ? meetings.filter((m) => new Date(m.datetime).toISOString().split('T')[0] === selectedDate)
+    ? meetings.filter((m) => toCalendarDateString(m.datetime) === selectedDate)
     : [];
 
   return (
@@ -257,19 +475,41 @@ export default function Schedule() {
       />
 
       <Text style={[styles.title, { color: textColor, marginVertical: 10 }]}>
-        {selectedDate ? `Meetings on ${selectedDate}` : 'Select a date'}
+        {selectedDate ? `Meetings on ${toDisplayDate(selectedDate)}` : 'Select a date'}
       </Text>
 
+      {showList ? (<FlatList
+        data={usersData}
+        keyExtractor={(item) => item.id.toString()}
+        renderItem={renderUser}
+        ListEmptyComponent={
+          selectedDate ? (
+            <View>
+            <Text style={{ color: textColor, textAlign: 'center' }}>No meetings for this date.</Text>
+          </View>
+          ) : null
+        }
+      /> ) : (
       <FlatList
         data={filteredMeetings}
         keyExtractor={(item) => item.id.toString()}
         renderItem={renderMeeting}
         ListEmptyComponent={
           selectedDate ? (
+            <View>
             <Text style={{ color: textColor, textAlign: 'center' }}>No meetings for this date.</Text>
+          </View>
           ) : null
         }
-      />
+      />)}
+      <View style={{ flexDirection: 'row', margin: 20, justifyContent: 'space-around' }}>
+          <TouchableOpacity
+          style={[styles.button, { backgroundColor: buttonColor }]}
+          onPress={() => setShowList(!showList)}
+        >
+          {showList ? (<Text style={{ color: buttonTextColor }}>Cancel</Text>) : (<Text style={{ color: buttonTextColor }}>Request a new meeting</Text>)}
+        </TouchableOpacity>
+      </View>
 
       {/* 🕒 Reschedule Date & Time Picker */}
       <DateTimePickerModal
@@ -296,13 +536,40 @@ export default function Schedule() {
         themeVariant={DarkMode ? "dark" : "light"}
       />
 
+      {/* 🕒 Reschedule Date & Time Picker */}
+      <DateTimePickerModal
+        isVisible={showPicker}
+        mode="datetime"
+        date={newDateTime}
+        minimumDate={new Date()}
+        display="spinner"
+        onConfirm={(date) => {
+          setNewDateTime(date);
+          setShowPicker(false);
+          setTimeout(() => {
+            Alert.alert(
+              "Confirm Request",
+              `Do you want to request a meeting on ${date.toLocaleDateString()} at ${date.toLocaleTimeString()}?`,
+              [
+                { text: "Cancel" },
+                { text: "Yes", onPress: ()=> requestMeeting(date) }
+              ]
+            );
+          }, 300); // slight delay so the picker closes smoothly
+        }}
+        onCancel={() => setShowPicker(false)}
+        themeVariant={DarkMode ? "dark" : "light"}
+      />
+
       <CustomDrawer visible={drawerVisible} onClose={() => setDrawerVisible(false)} />
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1 },
+  container: { 
+    flex: 1 
+  },
   topbar: {
     flexDirection: 'row',
     width: '100%',
@@ -317,7 +584,11 @@ const styles = StyleSheet.create({
     borderRadius: 90,
     marginRight: 15,
   },
-  title: { fontSize: 20, fontWeight: 'bold', textAlign: 'center' },
+  title: { 
+    fontSize: 20, 
+    fontWeight: 'bold', 
+    textAlign: 'center' 
+  },
   meetingCard: {
     width: '90%',
     alignSelf: 'center',
@@ -327,7 +598,7 @@ const styles = StyleSheet.create({
     elevation: 3,
   },
   button: {
-    width: '30%',
+    minWidth: '30%',
     paddingVertical: 8,
     paddingHorizontal: 12,
     borderRadius: 8,
@@ -343,4 +614,12 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     padding: 20,
   },
+  userItem: {
+  flexDirection: "row",
+  alignItems: "center",
+  gap: 15,
+  paddingVertical: 10,
+  borderBottomWidth: 1,
+  borderColor: "#ccc",
+},
 });

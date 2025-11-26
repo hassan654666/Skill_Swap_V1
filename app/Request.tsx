@@ -1,10 +1,11 @@
 import React, { useEffect, useState } from "react";
-import { View, Text, TouchableOpacity, StyleSheet, Image, useColorScheme, Alert, ActivityIndicator } from "react-native";
+import { View, Text, TouchableOpacity, StyleSheet, Image, useColorScheme, Alert, ActivityIndicator, Dimensions } from "react-native";
 import { supabase } from "@/lib/supabase";
 import { useUserContext } from "@/components/UserContext";
 import CustomDrawer from "@/components/customDrawer";
 import { FontAwesome } from "@expo/vector-icons";
 import { useLocalSearchParams } from "expo-router";
+import Constants from "expo-constants";
 
 interface MeetingRequest {
   id: string;
@@ -12,6 +13,7 @@ interface MeetingRequest {
   receiver_id: string;
   proposed_datetime: string;
   reschedule_of: string;
+  zoom_link: string;
   status: string;
 }
 
@@ -21,6 +23,8 @@ interface Profile {
   avatar_url: string | null;
 }
 
+const { width, height } = Dimensions.get("window");
+
 export default function Request() {
   const { userData, usersData, DarkMode } = useUserContext();
   const [drawerVisible, setDrawerVisible] = useState(false);
@@ -29,6 +33,7 @@ export default function Request() {
   const [senderProfile, setSenderProfile] = useState<Profile | null>(null);
   const [handled, setHandled] = useState<boolean>(false);
   const [loading, setLoading] = useState(true);
+  const [zoomMeetingId, setZoomMeetingId] = useState<string | null>(null);
   const { meetingId } = useLocalSearchParams<{ meetingId?: string }>();
 
   const textColor = DarkMode ? "#fff" : "#000";
@@ -39,6 +44,7 @@ export default function Request() {
   const buttonColor = DarkMode ? "#004187ff" : "#007BFF";
   const redButton = DarkMode ? "#dc3545" : "#ff0000ff"
   const buttonTextColor = "#fff";
+  const { supabaseUrl, supabaseAnonKey, sdkKey } = Constants.expoConfig?.extra || {};
 
   // Fetch meeting request
   const fetchRequest = async () => {
@@ -63,7 +69,7 @@ export default function Request() {
     else setLoading(false);
   };
 
-  // Fetch meeting request
+  // Fetch original meeting request
   const fetchOriginal = async () => {
     setLoading(true);
     const { data, error } = await supabase
@@ -85,7 +91,7 @@ export default function Request() {
   };
 
   // Fetch sender profile from profiles table
-    const fetchSenderProfile = (sender_id: string) => {
+  const fetchSenderProfile = (sender_id: string) => {
     if (!usersData || usersData.length === 0) return;
 
     const sender = usersData.find((user: any) => user.id === sender_id);
@@ -101,38 +107,168 @@ export default function Request() {
     }
 
     setLoading(false);
-    };
+  };
 
+  // Fetch meeting request
+  const fetchZoomMeeting = async () => {
+    const { data, error } = await supabase
+      .from("meetings")
+      .select("*")
+      .eq("meeting_id", original?.id || request?.reschedule_of || request?.id)
+      .single();
 
-  const handleAccept = async (id: string) => {
-    const { error } = await supabase.from("meeting_requests").update({ status: "accepted" }).eq("id", id);
-    if (error) Alert.alert("Error", error.message);
-    else {  
-      const { error: userError } = await supabase.from("schedules").insert({
-        user_id: userData?.id,
-        partner_id: senderProfile?.id,
-        meeting_id: id,
-        datetime: request?.proposed_datetime,
-        status: "scheduled",
+    if (error) {
+      console.error("Error fetching meeting request:", error);
+      return;
+    }
+
+    setZoomMeetingId(data.zoom_meeting_id || null);
+  };
+
+  // 🔹 Create a meeting via Edge Function
+  const createMeeting = async () => {
+    if (!userData?.id || !senderProfile?.id) {
+      Alert.alert("Error", "Missing user or partner ID.");
+      return;
+    }
+
+    setLoading(true);
+
+    try {
+      const res = await fetch("https://saxuhvcppykdazdfosae.supabase.co/functions/v1/create-zoom-meeting", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${supabaseAnonKey}`,
+        },
+        body: JSON.stringify({
+          meeting_request_id: meetingId,
+          host_id: userData.id,
+          guest_id: senderProfile.id,
+          topic: "Skill Swap Meeting",
+          start_time: request?.proposed_datetime,
+          duration: 40,
+        }),
       });
-      if (userError) Alert.alert("Error", userError.message);
-      if (request?.reschedule_of){
-        const { error: senderError } = await supabase.from("schedules").delete().eq('meeting_id', original?.id ? original.id : request.reschedule_of);
-        if (senderError) Alert.alert("Error", senderError.message);
-      }
-      Alert.alert("Accepted", "Meeting has been added to your schedule.");
-      const { error: notifError } = await supabase.from("notifications").update({ read: true }).eq("meeting_id", id);
-      if (notifError) Alert.alert("Error", notifError.message);
-      setHandled(true);
-      fetchRequest();
+
+      const text = await res.text();
+      const data = JSON.parse(text);
+
+      if (!res.ok) throw new Error(data?.error || text);
+
+    } catch (err: any) {
+      console.error("❌ Meeting creation error:", err);
+      Alert.alert("Error", err.message);
+    } finally {
+      setLoading(false);
     }
   };
 
+  // 🔹 Reschedule a meeting via Edge Function
+  const rescheduleMeeting = async () => {
+    if (!userData?.id || !senderProfile?.id) {
+      Alert.alert("Error", "Missing user or partner ID.");
+      return;
+    }
+
+    console.log("Meeting ID:", meetingId);
+    console.log("Zoom Meeting ID:", zoomMeetingId);
+    console.log("User ID:", userData?.id);
+    console.log("Sender Profile ID:", senderProfile?.id);
+    console.log("Request Proposed Datetime:", request?.proposed_datetime);
+
+    setLoading(true);
+
+    try {
+      const res = await fetch("https://saxuhvcppykdazdfosae.supabase.co/functions/v1/reschedule-zoom-meeting", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${supabaseAnonKey}`,
+        },
+        body: JSON.stringify({
+          meeting_request_id: meetingId,
+          zoom_meeting_id: zoomMeetingId,
+          // host_id: userData.id,
+          // guest_id: senderProfile.id,
+          topic: "Skill Swap Meeting",
+          start_time: request?.proposed_datetime,
+          duration: 40,
+        }),
+      });
+
+      const text = await res.text();
+      const data = JSON.parse(text);
+
+      if (!res.ok) throw new Error(data?.error || text);
+
+    } catch (err: any) {
+      console.error("❌ Meeting reschedule error:", err);
+      Alert.alert("Error", err.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleAccept = async (id: string) => {
+    const { error } = await supabase.from("meeting_requests").update({ status: "accepted", updated_at: new Date().toISOString() }).eq("id", id);
+    if (error) 
+      Alert.alert("Error", error.message); 
+
+    const { error: userError } = await supabase.from("schedules").insert({
+      user_id: userData?.id,
+      partner_id: senderProfile?.id,
+      meeting_id: id,
+      datetime: request?.proposed_datetime,
+      status: "Scheduled",
+    });
+    if (userError) 
+      Alert.alert("Error", userError.message);
+
+    const { error: notifyError } = await supabase.from("notifications").insert({
+      user_id: senderProfile?.id,
+      type: "accepted",
+      title: request?.reschedule_of ? "Reschedule Request Accepted" : "Meeting Request Accepted",
+      message: request?.reschedule_of ? "Your reschedule request has been accepted" : "Your meeting request has been accepted",
+      meeting_id: id,
+      read: false,
+    });
+    if (notifyError) 
+      Alert.alert("Error", notifyError.message);
+
+    if (request?.reschedule_of){
+      
+      const { error: senderError } = await supabase.from("schedules").delete().eq('meeting_id', original?.id ? original.id : request.reschedule_of);
+      if (senderError) 
+        Alert.alert("Error", senderError.message);
+
+      rescheduleMeeting();
+    } else {
+      createMeeting();
+    }
+    Alert.alert("Accepted", "Meeting has been added to your schedule.");
+    const { error: notifError } = await supabase.from("notifications").update({ read: true }).eq("meeting_id", id).eq("user_id", userData.id);
+    if (notifError) 
+      Alert.alert("Error", notifError.message);
+
+    setHandled(true);
+    fetchRequest();
+  };
+
   const handleDecline = async (id: string) => {
-    const { error } = await supabase.from("meeting_requests").update({ status: "declined" }).eq("id", id);
+    const { error } = await supabase.from("meeting_requests").update({ status: "declined", updated_at: new Date().toISOString(), }).eq("id", id);
     if (error) Alert.alert("Error", error.message);
     else {
-      const { error: notifError } = await supabase.from("notifications").update({ read: true }).eq("meeting_id", id);
+      const { error: notifyError } = await supabase.from("notifications").insert({
+        user_id: senderProfile?.id,
+        type: "declined",
+        title: request?.reschedule_of ? "Reschedule Request Declined" : "Meeting Request Declined",
+        message: request?.reschedule_of ? "Your reschedule request has been declined" : "Your meeting request has been declined",
+        meeting_id: id,
+        read: false,
+      });
+      if (notifyError) Alert.alert("Error", notifyError.message);
+      const { error: notifError } = await supabase.from("notifications").update({ read: true }).eq("meeting_id", id).eq("user_id", userData.id);
       if (notifError) Alert.alert("Error", notifError.message);
       Alert.alert("Declined", "Meeting request has been declined.");
       fetchRequest();
@@ -146,7 +282,10 @@ export default function Request() {
 
   useEffect(() => {
     if(request?.reschedule_of){
-        fetchOriginal();
+      fetchOriginal();
+    }
+    if(request?.zoom_link){
+      fetchZoomMeeting();
     }
   }, [request]);
 
@@ -183,19 +322,20 @@ export default function Request() {
   return (
     <View style={[styles.container, { backgroundColor }]}>
       <View style={[styles.topbar, { backgroundColor: SecondaryBackgroundColor }]}>
-        <FontAwesome
+        {/* <FontAwesome
           name="bars"
           size={22}
           color={textColor}
           style={{ margin: 15 }}
           onPress={() => setDrawerVisible(true)}
-        />
-        <TouchableOpacity style={{ marginRight: 20 }}>
+        /> */}
+        <Text style={[styles.title, { color: textColor }]}>Request</Text>
+        {/* <TouchableOpacity style={{ marginRight: 20 }}>
           <Image
             source={userData?.avatar_url ? { uri: userData.avatar_url } : require("./Avatar.png")}
             style={styles.avatar}
           />
-        </TouchableOpacity>
+        </TouchableOpacity> */}
       </View>
 
       <View style={[styles.card, { backgroundColor: SecondaryBackgroundColor }]}>
@@ -259,13 +399,18 @@ export default function Request() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, justifyContent: "flex-start", alignItems: "center" },
+  container: { 
+    flex: 1, 
+    justifyContent: "flex-start", 
+    alignItems: "center" 
+  },
   topbar: {
     flexDirection: "row",
     width: "100%",
-    justifyContent: "space-between",
+    height: height * 0.06,
+    justifyContent: "center",
     alignItems: "center",
-    paddingVertical: 10,
+    //paddingVertical: 10,
   },
   avatar: {
     width: 40,
@@ -283,11 +428,10 @@ const styles = StyleSheet.create({
     shadowRadius: 6,
     elevation: 5,
   },
-  title: {
-    fontSize: 22,
-    fontWeight: "bold",
-    textAlign: "center",
-    marginBottom: 20,
+  title: { 
+    fontSize: 20, 
+    fontWeight: 'bold', 
+    textAlign: 'center' 
   },
   senderInfo: {
     flexDirection: "row",
