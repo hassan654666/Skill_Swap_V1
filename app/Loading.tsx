@@ -56,7 +56,7 @@ export default function Loading() {
       if(!loading){
         checkSession();
       }
-      fetchSessionAndUserData();
+      // fetchSessionAndUserData();
     },[loading])
   )
 

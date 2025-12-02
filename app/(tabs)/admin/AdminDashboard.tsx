@@ -1,22 +1,25 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import { useUserContext } from '@/components/UserContext';
 import { View, Text, Image, Button, ScrollView, Alert, StyleSheet, TextInput, useColorScheme, TouchableOpacity, FlatList, BackHandler, Keyboard, Dimensions } from 'react-native';
-import { useLocalSearchParams, useNavigation, useRouter } from 'expo-router';
+import { useNavigation, useRouter } from 'expo-router';
 import { useIsFocused, useFocusEffect } from '@react-navigation/native';
 import { darkColors } from '@rneui/themed';
 import { FontAwesome } from '@expo/vector-icons';
-import { he } from 'date-fns/locale';
+import Users from './Users';
+import Courses from './Courses';
+import Reports from './Reports';
 //import { savePushToken } from '@/utils/savePushToken';
 //import { usePushToken } from '@/hooks/usePushToken';
 
 const { width, height } = Dimensions.get("window");
 
-export default function Users({searchText}:{searchText: string}) {
+export default function AdminDashboard() {
 
   const { session, usersData, userData, fetchSessionAndUserData, unreadCount, DarkMode } = useUserContext();
 
-  // const [searchText, setSearchText] = useState<string>('');
+  const [searchText, setSearchText] = useState<string>('');
   const [showSearch, setShowSearch] = useState(false);
+  const [activeScreen, setActiveScreen] = useState<"users" | "courses" | "reports">("users");
   const navigation = useNavigation<any>();
   const router = useRouter();
   const isFocused = useIsFocused();
@@ -31,38 +34,60 @@ export default function Users({searchText}:{searchText: string}) {
   const redButton = DarkMode ? "#dc3545" : "#ff0000ff"
   const buttonTextColor = "#fff";
 
-  function goToProfile(){
-    router.push('/Profile')
-    //navigation.navigate('Profile');
-  }
+  const screenTitles = {
+    users: "Users",
+    courses: "Courses",
+    reports: "Reports",
+  };
 
-useFocusEffect(
-    useCallback(() => {
-      const backAction = () => {
-        //router.back();
-        router.replace('/(tabs)/Home');
-        //router.push('/Home');
-        ///navigation.navigate('Home'); 
-        return true; 
-      };
+  // const searchData = usersData?.filter((users: any) =>
+  //   users?.name?.toLowerCase().includes(searchText?.toLowerCase()) || users?.skillsOffered?.toLowerCase().includes(searchText?.toLowerCase()) || users?.username?.toLowerCase().includes(searchText?.toLowerCase())
+  // );
+
+  const checkAdmin = async () => {
+      if(isFocused){
+        try {
+          if (!userData?.is_admin) {
+            router.replace('/(tabs)/Home');
+            //navigation.navigate('Login');
+          }
+        } catch (error) {
+          console.error('Navigation Error:', error);
+        }
+      }
+    };
   
-      const backHandler = BackHandler.addEventListener('hardwareBackPress', backAction);
+    useFocusEffect(
+      React.useCallback(() => {
+        checkAdmin();
+      }, [userData])
+    );
 
-      return () => backHandler.remove();
-    }, [])
-  );
+// useFocusEffect(
+//     useCallback(() => {
+//       const backAction = () => {
+//         router.replace('/(tabs)/Home');
+//         return true; 
+//       };
+  
+//       const backHandler = BackHandler.addEventListener('hardwareBackPress', backAction);
 
-  // const toggleSearch = () => {
-  //   if (showSearch) {
-  //     Keyboard.dismiss();
-  //     setSearchText('');
-  //   }
-  //   setShowSearch(!showSearch);
-  // };
+//       return () => backHandler.remove();
+//     }, [])
+//   );
+console.log("Admin: incoming searchText:", JSON.stringify(searchText));
 
-  const searchData = usersData?.filter((users: any) =>
-    users?.name?.toLowerCase().includes(searchText?.toLowerCase()) || users?.username?.toLowerCase().includes(searchText?.toLowerCase())
-  );
+  const toggleSearch = () => {
+    if (showSearch) {
+      Keyboard.dismiss();
+      setSearchText('');
+    }
+    setShowSearch(!showSearch);
+  };
+
+  const TotalUsers = () => {
+    return usersData?.length || 0;
+  }
 
   const renderItem = ({ item }: any) => (
     <TouchableOpacity
@@ -70,9 +95,9 @@ useFocusEffect(
       // onPress={() => navigation.navigate('UserProfile', { userId: item?.id })
       // }
       onPress={() => router.push({
-        pathname: '/admin/ManageUser',
+        pathname: '/UserProfile',
         params:{
-          id: item?.id
+          userId: item?.id
         }
       })
       }
@@ -83,10 +108,10 @@ useFocusEffect(
           {/*<Text style={[styles.usersName, {color: textColor}]}>{item.id}</Text>*/}
           <Text numberOfLines={2} style={[styles.usersName, {color: textColor}]}>{item?.name}</Text>
           <Text numberOfLines={1} style={[styles.usersUsername, {color: textColor}]}>@{item?.username}</Text>
-          {/* <Text numberOfLines={4} style={[styles.usersSkills, {color: textColor}]}>Skills Offered: {item?.skillsOffered}</Text> */}
+          <Text numberOfLines={4} style={[styles.usersSkills, {color: textColor}]}>Skills Offered: {item?.skillsOffered}</Text>
         </View>
       </View>
-    </TouchableOpacity>
+    </TouchableOpacity> 
   );
 
   console.log('Admin Dashboard rendered');
@@ -95,13 +120,13 @@ useFocusEffect(
 
     return (
       <View style={[styles.container, {backgroundColor: backgroundColor}]}>
-        {/* <View style= {{height: height * 0.12, width: '100%', justifyContent: 'space-between', backgroundColor: SecondaryBackgroundColor}}>
+        <View style= {{height: height * 0.12, width: '100%', backgroundColor: SecondaryBackgroundColor}}>
         <View style= {[styles.topbar, {backgroundColor: SecondaryBackgroundColor}]}>
           <TouchableOpacity style= { {margin: 10, marginLeft: 5, paddingHorizontal: 10} }>
-            {/* <FontAwesome name="arrow-left" size={20} color={textColor} /> 
+            {/* <FontAwesome name="arrow-left" size={20} color={textColor} /> */}
             <Text></Text>
           </TouchableOpacity>
-          {!showSearch && (<Text style={[styles.title, {color: textColor, backgroundColor: SecondaryBackgroundColor}]}>Admin Panel</Text>)}
+          {!showSearch && (<Text style={[styles.title, {color: textColor, backgroundColor: SecondaryBackgroundColor}]}>{screenTitles[activeScreen]}</Text>)}
           {showSearch && (
             <TextInput
               style={[styles.input, {backgroundColor: inputColor}]}
@@ -111,41 +136,34 @@ useFocusEffect(
             />
           )}
   
-          {/* Right Section 
+          {/* Right Section */}
           <TouchableOpacity style={{ margin: 10, marginLeft: 20 }} onPress={toggleSearch}>
             <FontAwesome name={showSearch ? 'close' : 'search'} size={20} color={textColor} />
           </TouchableOpacity>
         </View>
         <View style = {[styles.navbar, {backgroundColor: SecondaryBackgroundColor}]}>
-          <TouchableOpacity style ={styles.navButton} onPress={() => navigation.navigate('Users')}>
+          <TouchableOpacity style ={styles.navButton} onPress={() => setActiveScreen('users')}>
             <FontAwesome name="user" size={24} color={textColor} />
             <Text style={[styles.buttonText, {color: textColor}]}>Users</Text>
           </TouchableOpacity>
-          <TouchableOpacity style ={styles.navButton} onPress={() => navigation.navigate('ManageCourses')}>
+          <TouchableOpacity style ={styles.navButton} onPress={() => setActiveScreen('courses')}>
             <View style={{ position: "relative" }}>
               <FontAwesome name="book" size={24} color={textColor} />
             </View>
             <Text style={[styles.buttonText, {color: textColor}]}>Courses</Text>
           </TouchableOpacity>
-          <TouchableOpacity style ={styles.navButton} onPress={() => navigation.navigate('ManageReports')}>
+          <TouchableOpacity style ={styles.navButton} onPress={() => setActiveScreen('reports')}>
             <View style={{ position: "relative" }}>
-                <FontAwesome name="file" size={24} color={textColor} />
+              <FontAwesome name="file" size={24} color={textColor} />
             </View>
             <Text style={[styles.buttonText, {color: textColor}]}>Reports</Text>
           </TouchableOpacity>
         </View>
-        </View> */}
+        </View>
         <View style={[styles.content, {backgroundColor: backgroundColor}]}>
-          <FlatList
-            style={[styles.flatlist, {backgroundColor: backgroundColor}]}
-            data={searchData}
-            keyExtractor={item => item?.id}
-            renderItem={renderItem}
-            ListEmptyComponent={
-            <Text style={styles.noUser}>No users found</Text>
-            }
-          />
-          
+          {activeScreen === "users" && <Users searchText= {searchText} />}
+          {activeScreen === "courses" && <Courses searchText= {searchText} />}
+          {activeScreen === "reports" && <Reports searchText= {searchText} />}
         </View>
         
       </View>
@@ -197,7 +215,7 @@ useFocusEffect(
     },
     input: {
       width: '50%',
-      // height: 40,
+      height: height * 0.04,
       //height: '100%',
       borderWidth: 1,
       borderColor: '#ccc',
@@ -221,7 +239,7 @@ useFocusEffect(
     },
     flatlist: {
       width: '100%',
-      marginTop: 10,
+
     },
     username: {
       color: 'black',

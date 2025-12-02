@@ -26,6 +26,7 @@ export default function CompleteProfile(){
   const [description, setDescription] = useState('');
   const [selectedImage, setSelectedImage] = useState<any>();
   const [selectedHeaderImage, setSelectedHeaderImage] = useState<any>();
+  const [menuVisible, setMenuVisible] = useState(false);
 
   // all skills from 'skills' table
   const [skillsList, setSkillsList] = useState<any[]>([]);
@@ -62,11 +63,11 @@ export default function CompleteProfile(){
   const buttonTextColor = "#fff";
 
   const checkSession = async () => {
-    if (isFocused && session && !userData) {
-      return;
-    } 
-    else {
+    if (isFocused && session && userData) {
       router.replace('/(tabs)/Home');
+    } 
+    else if(!session){
+      router.replace('/Login');
     }
   };
 
@@ -192,7 +193,7 @@ export default function CompleteProfile(){
 
   const uploadImage = async (theselectedImage: any) => {
     if (!theselectedImage) {
-      Alert.alert('Please select an image first.');
+      // Alert.alert('Please select an image first.');
       return;
     }
 
@@ -243,7 +244,7 @@ export default function CompleteProfile(){
 
   const uploadHeaderImage = async (theselectedHeaderImage: any) => {
     if (!theselectedHeaderImage) {
-      Alert.alert('Please select an image first.');
+      // Alert.alert('Please select an image first.');
       return;
     }
 
@@ -418,7 +419,7 @@ export default function CompleteProfile(){
         const rowsToUpsert = [...newOffered, ...newRequired];
   
         if (rowsToUpsert.length === 0) {
-          Alert.alert("Nothing to save", "No new skills to save.");
+          // Alert.alert("Nothing to save", "No new skills to save.");
           setSaveActive(false);
           return;
         }
@@ -499,14 +500,29 @@ export default function CompleteProfile(){
       };
     }, [user?.id]);
   
+    const handleLogout = async () => {
+      try {
+        // clearUserData();
+        const { error } = await supabase.auth.signOut();
+        if (error) throw error;
+      } catch (error: any) {
+        Alert.alert('Error', error.message);
+      }
+    };
+
   console.log('Complete Profile rendered');
 
   return(
     <View style= {[styles.container, {backgroundColor: backgroundColor}]}>
       <View style= {[styles.topbar, {backgroundColor: backgroundColor}]}>
-        {userData && (<TouchableOpacity style= { {margin: 10, marginLeft: 15} } onPress={backAction}>
+        {userData ? (<TouchableOpacity style= { {margin: 10, marginLeft: 15} } onPress={backAction}>
           <FontAwesome name="arrow-left" size={20} color={textColor} />
-        </TouchableOpacity>)}
+        </TouchableOpacity>) : (
+          <View style= { {margin: 10, marginLeft: 15} }></View>
+        )}
+        <TouchableOpacity style={{ paddingHorizontal: 15 }} onPress={() => setMenuVisible(true)}>
+          <FontAwesome name="ellipsis-v" size={20} color={textColor} />
+        </TouchableOpacity>
       </View>
 
       {/* Header Image */}
@@ -847,6 +863,21 @@ export default function CompleteProfile(){
         </View>
 
         </View>
+        {/* Menu Modal */}
+        <Modal
+          transparent={true}
+          visible={menuVisible}
+          animationType="fade"
+          onRequestClose={() => setMenuVisible(false)}
+        >
+          <Pressable style={styles.modalOverlay} onPress={() => setMenuVisible(false)}>
+            <View style={[styles.menu, { backgroundColor: backgroundColor }]}>
+              <TouchableOpacity style={styles.menuItem} onPress={handleLogout}>
+                <Text style={{ color: redButton, fontSize: 16 }}>Log Out</Text>
+              </TouchableOpacity>
+            </View>
+          </Pressable>
+        </Modal>
         
     </View>
 
@@ -873,10 +904,28 @@ const styles = StyleSheet.create({
     //height: '6.6%',
     //padding: 20,
     alignItems: 'center',
-    //justifyContent: 'flex-start', 
+    justifyContent: 'space-between', 
     verticalAlign: 'top',
     //flexGrow: 1,
     //flexShrink: 0,
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.3)',
+    justifyContent: 'flex-start',
+    alignItems: 'flex-end',
+  },
+  menu: {
+    width: 160,
+    marginTop: 50,
+    marginRight: 10,
+    borderRadius: 8,
+    paddingVertical: 8,
+    elevation: 5,
+  },
+  menuItem: {
+    paddingVertical: 10,
+    paddingHorizontal: 15,
   },
   content:{
       flex: 1,

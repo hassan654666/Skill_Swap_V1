@@ -13,21 +13,22 @@ import {
   Keyboard,
 } from "react-native";
 import { supabase } from "@/lib/supabase";
-import { useNavigation } from "expo-router";
+import { useNavigation, useRouter } from "expo-router";
 import { useUserContext } from "@/components/UserContext";
 import { FontAwesome } from "@expo/vector-icons";
 
 const { width, height } = Dimensions.get("window");
 
-export default function ManageCourses() {
-  const { DarkMode, usersData, courses, setCourses } = useUserContext();
+export default function Courses({searchText}:{searchText: string}) {
+  const { DarkMode, usersData, courses, setCourses, allUsers } = useUserContext();
 
   // const [courses, setCourses] = useState<any[]>([]);
-  const [profiles, setProfiles] = useState<any[]>(usersData);
+  const [profiles, setProfiles] = useState<any[]>(allUsers);
   const [loading, setLoading] = useState(false);
   const navigation = useNavigation<any>()
+  const router = useRouter();
 
-  const [searchText, setSearchText] = useState<string>('');
+  // const [searchText, setSearchText] = useState<string>('');
   const [showSearch, setShowSearch] = useState(false);
 
   // THEME
@@ -58,8 +59,10 @@ export default function ManageCourses() {
       if (courseErr) throw courseErr;
       if (profileErr) throw profileErr;
 
-      setCourses(courseData || []);
-      setProfiles(profileData || []);
+      if(courseData){
+      setCourses(courseData);
+      setProfiles(profileData);
+      }
 
     } catch (err: any) {
       Alert.alert("Error", err.message);
@@ -70,57 +73,37 @@ export default function ManageCourses() {
     loadData();
   }, []);
 
-  // -------------------------
-  // APPROVE COURSE
-  // -------------------------
-  const approveCourse = async (id: string) => {
-    try {
-      setLoading(true);
-      const { error } = await supabase
-        .from("courses")
-        .update({ status: "approved" })
-        .eq("id", id);
+  useEffect(() => {
+    if(!usersData) return;
 
-      if (error) throw error;
+    const coursesChannel = supabase
+      .channel("courses-update")
+      .on(
+        "postgres_changes",
+        {
+          event: "*", // insert/update/delete
+          schema: "public",
+          table: "courses",
+        },
+        () => {
+          // Re-fetch all counts whenever something changes
+          loadData();
+        }
+      )
+      .subscribe();
 
-      Alert.alert("Approved", "Course has been approved.");
-      loadData();
-    } catch (e: any) {
-      Alert.alert("Error", e.message);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  // -------------------------
-  // REJECT COURSE
-  // -------------------------
-  const rejectCourse = async (id: string) => {
-    try {
-      setLoading(true);
-      const { error } = await supabase
-        .from("courses")
-        .update({ status: "rejected" })
-        .eq("id", id);
-
-      if (error) throw error;
-
-      Alert.alert("Rejected", "Course has been rejected.");
-      loadData();
-    } catch (e: any) {
-      Alert.alert("Error", e.message);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const toggleSearch = () => {
-      if (showSearch) {
-        Keyboard.dismiss();
-        setSearchText('');
-      }
-      setShowSearch(!showSearch);
+    return () => {
+      supabase.removeChannel(coursesChannel);
     };
+  }, [usersData, loadData]);
+
+  // const toggleSearch = () => {
+  //     if (showSearch) {
+  //       Keyboard.dismiss();
+  //       setSearchText('');
+  //     }
+  //     setShowSearch(!showSearch);
+  //   };
   
     const searchData = courses?.filter((course: any) =>
       course?.title?.toLowerCase().includes(searchText?.toLowerCase()) || course?.description?.toLowerCase().includes(searchText?.toLowerCase()) || course?.status?.toLowerCase().includes(searchText?.toLowerCase())
@@ -137,38 +120,31 @@ export default function ManageCourses() {
     const isRejected = course.status === "rejected";
 
     return (
-      <View
+      <TouchableOpacity
         style={{
           backgroundColor: TertiaryBackgroundColor,
           marginVertical: 10,
           borderRadius: 12,
           padding: 14,
         }}
+        onPress={() => router.push({
+        pathname: '/admin/ManageCourse',
+        params:{
+          courseId: course?.id
+        }
+      })
+      }
       >
         {/* THUMBNAIL */}
-        {course.thumbnail_url ? (
-          <Image
-            source={{ uri: course.thumbnail_url }}
-            style={{
-              width: "100%",
-              height: 180,
-              borderRadius: 10,
-              backgroundColor: "#999",
-            }}
-          />
-        ) : (
-          <View
-            style={{
-              height: 180,
-              backgroundColor: "#777",
-              borderRadius: 10,
-              justifyContent: "center",
-              alignItems: "center",
-            }}
-          >
-            <Text style={{ color: "#fff" }}>No Thumbnail</Text>
-          </View>
-        )}
+        <Image
+          source={course?.thumbnail_url ? { uri: course?.thumbnail_url } : require('@/assets/images/icon.png')}
+          style={{
+            width: "100%",
+            height: 180,
+            borderRadius: 10,
+            backgroundColor: "#999",
+          }}
+        />
 
         {/* TITLE */}
         <Text
@@ -218,43 +194,7 @@ export default function ManageCourses() {
           Status: {course.status.toUpperCase()}
         </Text>
 
-        {/* BUTTONS */}
-        {isPending && (<View style={{ flexDirection: "row", gap: 10 }}>
-          <TouchableOpacity
-            disabled={!isPending}
-            onPress={() => approveCourse(course.id)}
-            style={{
-              flex: 1,
-              padding: 12,
-              borderRadius: 10,
-              opacity: isPending ? 1 : 0.4,
-              backgroundColor: buttonColor,
-              alignItems: "center",
-            }}
-          >
-            <Text style={{ color: buttonTextColor, fontWeight: "700" }}>
-              Approve
-            </Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity
-            disabled={!isPending}
-            onPress={() => rejectCourse(course.id)}
-            style={{
-              flex: 1,
-              padding: 12,
-              borderRadius: 10,
-              opacity: isPending ? 1 : 0.4,
-              backgroundColor: redButton,
-              alignItems: "center",
-            }}
-          >
-            <Text style={{ color: "#fff", fontWeight: "700" }}>
-              Reject
-            </Text>
-          </TouchableOpacity>
-        </View>)}
-      </View>
+      </TouchableOpacity>
     );
   };
 
@@ -263,12 +203,12 @@ export default function ManageCourses() {
   // -------------------------
   return (
     <View style={[styles.container, {backgroundColor: backgroundColor}]}>
-        <View style= {{height: height * 0.12, width: '100%', justifyContent: 'space-between', backgroundColor: SecondaryBackgroundColor}}>
+        {/* <View style= {{height: height * 0.12, width: '100%', justifyContent: 'space-between', backgroundColor: SecondaryBackgroundColor}}>
             <View style= {[styles.topbar, {backgroundColor: SecondaryBackgroundColor}]}>
                 <TouchableOpacity 
                 // onPress={() => navigation.navigate('AdminDashboard')}
                 style= { {margin: 10, marginLeft: 5, paddingHorizontal: 10} } >
-                    {/* <FontAwesome name="arrow-left" size={20} color={textColor} /> */}
+                    {/* <FontAwesome name="arrow-left" size={20} color={textColor} /> *
                 <Text></Text>
                 </TouchableOpacity>
                 {!showSearch && (
@@ -299,7 +239,7 @@ export default function ManageCourses() {
                     <View style={styles.badge}>
                         <Text style={styles.badgeText}>{unreadCount < 99 ?unreadCount: "99+"}</Text>
                     </View>
-                    )} */}
+                    )} *
                 </View>
                 <Text style={styles.buttonText}>Courses</Text>
                 </TouchableOpacity>
@@ -310,12 +250,12 @@ export default function ManageCourses() {
                     <View style={styles.badge}>
                         <Text style={styles.badgeText}>{unreadCount < 99 ?unreadCount: "99+"}</Text>
                     </View>
-                    )} */}
+                    )} *
                 </View>
                 <Text style={styles.buttonText}>Reports</Text>
                 </TouchableOpacity>
             </View>
-        </View>
+        </View> */}
         <View style={{ width: '100%', flex: 1, backgroundColor, padding: 10 }}>
         {/* <Text
             style={{
@@ -347,6 +287,7 @@ export default function ManageCourses() {
 const styles = StyleSheet.create({
     container: {
       flex: 1,
+      width: '100%',
       justifyContent: 'center',
       alignItems: 'center',
     },

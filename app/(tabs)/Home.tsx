@@ -15,7 +15,7 @@ export default function Home() {
 
   const { session, skills, setSkills, usersData, userData, fetchSessionAndUserData, unreadCount, DarkMode, setIsDark } = useUserContext();
 
-  const [users, setUsers] = useState<any[]>([]);
+  const [users, setUsers] = useState<any[]>(usersData);
   const [searchText, setSearchText] = useState("");
   const [selectedTag, setSelectedTag] = useState<string | null>(null);
   const [sortBy, setSortBy] = useState("rating");
@@ -94,7 +94,8 @@ export default function Home() {
         console.log("skills error:", sError);
         return;
       }
-      setSkills(skillsData);
+      if(skillsData)
+        setSkills(skillsData);
 
       // Fetch profile_skills with join
       const { data: profileSkills, error: psError } = await supabase
@@ -123,7 +124,8 @@ export default function Home() {
         };
       });
 
-      setUsers(finalUsers);
+      if(finalUsers)
+        setUsers(finalUsers);
 
     } catch (err) {
       console.log("fetchAllData catch:", err);
@@ -136,8 +138,8 @@ export default function Home() {
 
   const uniqueTags : any[] = Array.from(new Set(skills.map((s: any) => s.type)));
 
-  const searchData = users.filter((user: any) => {
-    const text = searchText.toLowerCase();
+  const searchData = usersData.filter((user: any) => {
+    const text = searchText.trim().toLowerCase();
 
     // Basic text search
     const matchesText =
@@ -353,6 +355,7 @@ export default function Home() {
                     width: 180,
                   }}
                 >
+                  <Text style={{fontSize: 16, color: textColor, marginBottom: 10}}>Sort by:</Text>
                   <TouchableOpacity
                     onPress={() => {
                       setSortBy("rating");
@@ -360,7 +363,7 @@ export default function Home() {
                     }}
                   >
                     <Text style={{ color: textColor, paddingVertical: 6 }}>
-                      ⭐ Sort by Rating
+                      Rating
                     </Text>
                   </TouchableOpacity>
 
@@ -371,7 +374,7 @@ export default function Home() {
                     }}
                   >
                     <Text style={{ color: textColor, paddingVertical: 6 }}>
-                      🔤 Sort by Name (A–Z)
+                      Name (A–Z)
                     </Text>
                   </TouchableOpacity>
 
@@ -382,37 +385,40 @@ export default function Home() {
                     }}
                   >
                     <Text style={{ color: textColor, paddingVertical: 6 }}>
-                      🧩 Sort by Skills Offered
+                      Skills Offered
                     </Text>
                   </TouchableOpacity>
                 </View>
               </Pressable>
             </Modal>
           </View>
-          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle= {{justifyContent: 'center', alignSelf: 'flex-start'}}style={{ marginBottom: 5 }}>
-            {uniqueTags.map(tag => (
-              <Pressable
-                key={tag}
-                onPress={() => setSelectedTag(prev => prev === tag ? null : tag)}
-                style={{
-                  height: height * 0.04,
-                  minWidth: width/4,
-                  paddingVertical: 0,
-                  justifyContent: 'center',
-                  alignItems: 'center',
-                  paddingHorizontal: 10,
-                  backgroundColor: selectedTag === tag ? buttonColor : TertiaryBackgroundColor,
-                  borderRadius: 0,
-                  borderColor: SecondaryBackgroundColor,
-                  borderLeftWidth: 0.5,
-                  borderRightWidth: 0.5,
-                  // marginRight: 8
-                }}
-              >
-                <Text style={{ color: textColor }}>{tag}</Text>
-              </Pressable>
-            ))}
-          </ScrollView>
+          <View style={{height: height * 0.04}}>
+            <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle= {{justifyContent: 'center', alignSelf: 'flex-start'}}>
+              {uniqueTags.map(tag => (
+                <Pressable
+                  key={tag}
+                  onPress={() => setSelectedTag(prev => prev === tag ? null : tag)}
+                  style={{
+                    height: height * 0.04,
+                    minWidth: width/3.75,
+                    paddingVertical: 0,
+                    justifyContent: 'center',
+                    alignItems: 'center',
+                    paddingHorizontal: 10,
+                    backgroundColor: selectedTag === tag ? buttonColor : TertiaryBackgroundColor,
+                    borderRadius: 0,
+                    borderColor: SecondaryBackgroundColor,
+                    borderBottomWidth: 0.5,
+                    borderLeftWidth: 0.5,
+                    borderRightWidth: 0.5,
+                    // marginRight: 8
+                  }}
+                >
+                  <Text style={{ color: selectedTag === tag ? buttonTextColor : textColor }}>{tag}</Text>
+                </Pressable>
+              ))}
+            </ScrollView>
+          </View>
         </View>
         <View style={[styles.content, {backgroundColor: backgroundColor}]}>
           <FlatList
@@ -504,7 +510,7 @@ export default function Home() {
       borderRadius: 20,
       verticalAlign: 'middle',
       textAlignVertical: 'center',
-      //padding: 10,
+      paddingHorizontal: 10,
     },
     logo: {
       width: 80,

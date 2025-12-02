@@ -17,21 +17,19 @@ import { WebView } from 'react-native-webview';
 import * as WebBrowser from "expo-web-browser";
 import { useRouter, useLocalSearchParams } from "expo-router";
 import { FontAwesome } from "@expo/vector-icons";
-import { supabase } from "../lib/supabase";
+import { supabase } from "@/lib/supabase";
 import { useUserContext } from "@/components/UserContext";
 import { Video, ResizeMode } from "expo-av";
 
 const { width, height } = Dimensions.get("window");
 
-export default function OpenCourse() {
+export default function ManageCourse() {
   const { courseId } = useLocalSearchParams();
   const { userData, DarkMode, courses, allUsers, purchases } = useUserContext();
 
   const [course, setCourse] = useState<any>(null);
   const [loading, setLoading] = useState(true);
-  const [purchased, setPurchased] = useState(false);
   const [owner, setOwner] = useState<any>();
-  const [processing, setProcessing] = useState(false);
   const [fileUrl, setFileUrl] = useState<string>('');
   const [docViewerVisible, setDocViewerVisible] = useState(false);
 
@@ -47,15 +45,18 @@ export default function OpenCourse() {
   const TertiaryBackgroundColor = DarkMode ? "#484848ff" : "#ffffffff";
   const inputColor = DarkMode ? "#6c6c6cff" : "#EAEAEA";
   const buttonColor = DarkMode ? "#004187ff" : "#007BFF";
+  const redButton = DarkMode ? "#dc3545" : "#ff0000ff"
+  const linkTextColor = DarkMode ? "#007bffff" : "#0040ffff";
   const buttonTextColor = "#fff";
+  const bubbleOneColor = DarkMode ? '#183B4E' : '#3D90D7';
+  const bubbleTwoColor = DarkMode ? '#015551' : '#1DCD9F';
 
   function fectchAsyncCourse() {
     const openedCourse = courses.find((course: any) => (course?.id === courseId));
     setCourse(openedCourse);
     const courseOwner = allUsers.find((user: any) => user?.id === openedCourse?.owner_id);
     setOwner(courseOwner);
-    setPurchased(Boolean(purchases.find((purchase: any) => purchase?.course_id === courseId && purchase?.user_id === userData?.id) || (courseOwner?.id === userData?.id) || false));
-    // setPurchased(owner.id === userData.id);
+    // setPurchased(Boolean(purchases.find((purchase: any) => purchase?.course_id === courseId && purchase?.user_id === userData?.id) || (courseOwner?.id === userData?.id) || false));
     setLoading(false);
   }
 
@@ -80,94 +81,57 @@ export default function OpenCourse() {
     setLoading(false);
   };
 
-  const checkPurchase = async () => {
-    if (!userData?.id) return;
-
-    const { data } = await supabase
-      .from("purchases")
-      .select("*")
-      .eq("user_id", userData.id)
-      .eq("course_id", courseId)
-      .maybeSingle();
-
-    const { data: courseData } = await supabase
-      .from("courses")
-      .select("*")
-      .eq("id", courseId)
-      .maybeSingle();
-
-    const { data: owner } = await supabase
-      .from("profiles")
-      .select("*")
-      .eq("id", courseData?.owner_id)
-      .maybeSingle();
-
-    setOwner(owner);
-    if (data) setPurchased(true);
-    else checkOwner();
-  };
-
-  const checkOwner = async () => {
-    if (!userData?.id) return;
-
-    const { data } = await supabase
-      .from("courses")
-      .select("*")
-      .eq("owner_id", userData.id)
-      .eq("id", courseId)
-      .maybeSingle();
-
-    if (data) setPurchased(true);
-  };
-
   useEffect(() => {
     fetchCourse();
-    checkPurchase();
   }, [courseId]);
 
-  // Mock payment
-  const handlePurchase = async () => {
-    Alert.alert(
-      "Mock Payment",
-      `Pay Rs. ${course.price}?`,
-      [
-        {
-          text: "Cancel",
-          style: "cancel",
-        },
-        {
-          text: "Pay Now",
-          onPress: async () => {
-            setProcessing(true);
-            await savePurchase();
-            setProcessing(false);
-          },
-        },
-      ]
-    );
-  };
+  const isPending = course?.status === "pending";
+  const isApproved = course?.status === "approved";
+  const isRejected = course?.status === "rejected";
 
-  // Save in purchases table
-  const savePurchase = async () => {
-    if (!userData?.id) return;
-
-    const { error } = await supabase.from("purchases").insert([
-      {
-        user_id: userData.id,
-        course_id: courseId,
-        ammount: course.price,
-        status: 'bought'
-      },
-    ]);
-
-    if (error) {
-      Alert.alert("Error", "Failed to save purchase.");
-      return;
-    }
-
-    setPurchased(true);
-    Alert.alert("Success", "You now own this course!");
-  };
+  // -------------------------
+    // APPROVE COURSE
+    // -------------------------
+    const approveCourse = async (id: string) => {
+      try {
+        setLoading(true);
+        const { error } = await supabase
+          .from("courses")
+          .update({ status: "approved" })
+          .eq("id", id);
+  
+        if (error) throw error;
+  
+        Alert.alert("Approved", "Course has been approved.");
+        fetchCourse();
+      } catch (e: any) {
+        Alert.alert("Error", e.message);
+      } finally {
+        setLoading(false);
+      }
+    };
+  
+    // -------------------------
+    // REJECT COURSE
+    // -------------------------
+    const rejectCourse = async (id: string) => {
+      try {
+        setLoading(true);
+        const { error } = await supabase
+          .from("courses")
+          .update({ status: "rejected" })
+          .eq("id", id);
+  
+        if (error) throw error;
+  
+        Alert.alert("Rejected", "Course has been rejected.");
+        fetchCourse();
+      } catch (e: any) {
+        Alert.alert("Error", e.message);
+      } finally {
+        setLoading(false);
+      }
+    };
 
   const getFileTypeFromUrl = (url: string) => {
     if (!url) return "";
@@ -222,20 +186,20 @@ export default function OpenCourse() {
               style={{ paddingHorizontal: 15 }}
               onPress={() => router.back()}
           />
-          <Text style={[styles.title, { color: textColor }]}>View Course</Text>
+          <Text style={[styles.title, { color: textColor }]}>Manage Course</Text>
           <View style={{ width: width * 0.08 }} ></View>
         </View>
     <ScrollView style={{ width: '100%', flex: 1, backgroundColor: backgroundColor }}>
       {/* Thumbnail */}
-      <Image
-        // source={{ uri: course.thumbnail_url  }}
-        source={course?.thumbnail_url ? { uri: course?.thumbnail_url } : require('@/assets/images/icon.png')}
-        style={{
-          width: "100%",
-          height: 220,
-          resizeMode: "cover",
-        }}
-      />
+        <Image
+          // source={{ uri: course.thumbnail_url  }}
+          source={course?.thumbnail_url ? { uri: course?.thumbnail_url } : require('@/assets/images/icon.png')}
+          style={{
+            width: "100%",
+            height: 220,
+            resizeMode: "cover",
+          }}
+        />
 
       <View style={{ padding: 16 }}>
         {/* Title */}
@@ -252,32 +216,63 @@ export default function OpenCourse() {
         </Text>
 
         {/* Price */}
-        {(!purchased && course.price > 0) && (<Text style={{ fontSize: 20, fontWeight: "600", marginBottom: 16, color: textColor }}>
+        <Text style={{ fontSize: 20, fontWeight: "600", marginBottom: 16, color: textColor }}>
           Price: {course.price > 0 ? `$${course.price}` : "Free"}
-        </Text>)}
+        </Text>
 
-        {/* Purchase button */}
-        {(!purchased && course.price > 0) && (
-          <TouchableOpacity
-            onPress={handlePurchase}
-            disabled={processing}
+        {/* STATUS */}
+        <Text
             style={{
-              backgroundColor: buttonColor,
-              padding: 14,
-              borderRadius: 10,
-              alignItems: "center",
-              marginBottom: 20,
+            marginTop: 6,
+            marginBottom: 10,
+            color:
+                isApproved
+                ? "#00c851"
+                : isRejected
+                ? "#ff4444"
+                : "#ffbb33",
+            fontWeight: "bold",
             }}
-          >
-            {processing ? (
-              <ActivityIndicator color="#fff" />
-            ) : (
-              <Text style={{ color: "#fff", fontSize: 16, fontWeight: "600" }}>
-                Buy Now
-              </Text>
-            )}
-          </TouchableOpacity>
-        )}
+        >
+            Status: {course.status.toUpperCase()}
+        </Text>
+
+        {/* BUTTONS */}
+        {isPending && (<View style={{ flexDirection: "row", gap: 10 }}>
+        <TouchableOpacity
+            disabled={!isPending}
+            onPress={() => approveCourse(course.id)}
+            style={{
+            flex: 1,
+            padding: 12,
+            borderRadius: 10,
+            opacity: isPending ? 1 : 0.4,
+            backgroundColor: buttonColor,
+            alignItems: "center",
+            }}
+        >
+            <Text style={{ color: buttonTextColor, fontWeight: "700" }}>
+            Approve
+            </Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity
+            disabled={!isPending}
+            onPress={() => rejectCourse(course.id)}
+            style={{
+            flex: 1,
+            padding: 12,
+            borderRadius: 10,
+            opacity: isPending ? 1 : 0.4,
+            backgroundColor: redButton,
+            alignItems: "center",
+            }}
+        >
+            <Text style={{ color: "#fff", fontWeight: "700" }}>
+            Reject
+            </Text>
+        </TouchableOpacity>
+        </View>)}
 
         {/* Files */}
         <Text style={{ fontSize: 20, fontWeight: "600", color: textColor, marginBottom: 20 }}>
@@ -292,11 +287,9 @@ export default function OpenCourse() {
               {(fileType === "mp4" || fileType === "mov" || fileType === "webm") ? (
 
                 <TouchableOpacity onPress={() => {
-                  if(purchased || course.price === 0)
                   {setMediaPreviewUri(url);
                   setMediaPreviewType("video");
                   setMediaPreviewVisible(true);}
-                  else Alert.alert("Locked", "Buy the course to access this file.");
                 }}>
                   <View style={{ width: '100%', height: 150, position: "relative", justifyContent: "center", alignItems: "center" }}>
                     <Video source={{ uri: url }} style={{ width: '100%', height: '100%', borderRadius: 8}} resizeMode={ResizeMode.COVER} />
@@ -321,7 +314,6 @@ export default function OpenCourse() {
                   padding: 12,
                   borderRadius: 8,
                   marginVertical: 6,
-                  opacity: purchased || course.price === 0 ? 1 : 0.4,
                   }}>
                     <Text
                       style={{
@@ -332,11 +324,7 @@ export default function OpenCourse() {
                     >
                     {fileName}
                     </Text>
-                    <FontAwesome
-                    name={purchased || course.price === 0 ? "download" : "lock"}
-                    size={20}
-                    color={textColor}
-                    />
+                    
                   </View>
                 </TouchableOpacity>
               ) : (
@@ -349,12 +337,10 @@ export default function OpenCourse() {
                   padding: 12,
                   borderRadius: 8,
                   marginVertical: 6,
-                  opacity: purchased || course.price === 0 ? 1 : 0.4,
+
                 }}
                 onPress={() =>
-                  purchased || course.price === 0
-                    ? openFile(url)
-                    : Alert.alert("Locked", "Buy the course to access this file.")
+                  openFile(url)
                 }
               >
                 <FontAwesome name={getFileIcon(fileType)} size={20} color={textColor} />
@@ -367,11 +353,7 @@ export default function OpenCourse() {
                 >
                   {fileName}
                 </Text>
-                <FontAwesome
-                  name={purchased || course.price === 0 ? "download" : "lock"}
-                  size={20}
-                  color={textColor}
-                />
+                
               </TouchableOpacity> )}
             </View>
           );

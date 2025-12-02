@@ -21,12 +21,13 @@ import { useRouter } from "expo-router";
 import { useUserContext } from "@/components/UserContext";
 import { FontAwesome } from "@expo/vector-icons";
 import { supabase } from "../lib/supabase";
+import { Picker } from "@react-native-picker/picker";
 
 const { width, height } = Dimensions.get("window");
 const BUCKET = "courses";
 
 export default function UploadCourse() {
-  const { userData, DarkMode } = useUserContext();
+  const { userData, DarkMode, skills } = useUserContext();
   const router = useRouter();
 
   const textColor = DarkMode ? "#fff" : "#000";
@@ -40,6 +41,7 @@ export default function UploadCourse() {
   // form
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
+  const [type, setType] = useState("");
   const [price, setPrice] = useState("");
   const [thumbnail, setThumbnail] = useState<null | { uri: string; name?: string }>(null);
   const [files, setFiles] = useState<Array<{ uri: string; name?: string; mimeType?: string }>>([]);
@@ -195,6 +197,7 @@ export default function UploadCourse() {
           owner_id: userData.id,
           title: title.trim(),
           description: description.trim(),
+          type: type,
           price: priceNumber,
           thumbnail_url: thumbnailUrl,
           file_name: uploadedFileNames,
@@ -214,6 +217,7 @@ export default function UploadCourse() {
       // optionally clear form
       setTitle("");
       setDescription("");
+      setType("");
       setPrice("");
       setThumbnail(null);
       setFiles([]);
@@ -225,6 +229,9 @@ export default function UploadCourse() {
       setLoading(false);
     }
   };
+
+  // Extract unique types from skills table
+  const uniqueTypes = [...new Set(skills.map((s: any) => s.type))];
 
   const getFileIcon = (mimeType?: string) => {
     if (!mimeType) return "file-o";
@@ -251,7 +258,7 @@ export default function UploadCourse() {
           onPress={() => router.back()}
         />
         <Text style={[styles.title, { color: textColor }]}>Create Course</Text>
-        <View style={{ width: 44 }} /> {/* spacer to align title center */}
+        <View style={{ width: 44 }} />
       </View>
 
       <ScrollView style={{ width: "100%", padding: 16 }} contentContainerStyle={{ paddingBottom: 40 }}>
@@ -277,7 +284,25 @@ export default function UploadCourse() {
           />
         </View>
 
-        <View style={[styles.inputArea, { backgroundColor: SecondaryBackgroundColor, flexDirection: "row", alignItems: "center" }]}>
+        <View style={{ marginVertical: 8, width: "100%", backgroundColor: TertiaryBackgroundColor, borderRadius: 6, overflow: "hidden" }}>
+          <Picker
+              selectedValue={type}
+              onValueChange={(value) => 
+              setType(value)
+              }
+          >
+              <Picker.Item label="Select Type" value={null}/>
+              {uniqueTypes.map((type: any) => (
+              <Picker.Item
+                  key={type}
+                  label={`${type}`}
+                  value={type}
+              />
+              ))}
+          </Picker>
+        </View>
+
+        <View style={[styles.inputArea, { backgroundColor: SecondaryBackgroundColor, flexDirection: "row", alignItems: "center", borderRadius: 12 }]}>
           <TextInput
             placeholder="Price (optional)"
             placeholderTextColor={DarkMode ? "#AAA" : "#666"}

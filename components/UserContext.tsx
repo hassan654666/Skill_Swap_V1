@@ -38,6 +38,10 @@ interface UserContextType {
   setCourses: any,
   reports: any, 
   setReports: any,
+  allUsers: any,
+  setAllUsers: any,
+  purchases: any,
+  setPurchases: any,
   fetchSessionAndUserData: () => Promise<void>;
   clearUserData: () => void;
 }
@@ -66,6 +70,8 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [skills, setSkills] = useState<any[]>([]);
   const [courses, setCourses] = useState<any[]>([]);
   const [reports, setReports] = useState<any[]>([]);
+  const [allUsers, setAllUsers] = useState<any[]>([]);
+  const [purchases, setPurchases] = useState<any[]>([]);
   const router = useRouter();
 
   useEffect(() => {
@@ -75,17 +81,27 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const asyncUsers = await AsyncStorage.getItem('users');
     const asyncProfile = await AsyncStorage.getItem('profile');
     const asyncDarkMode = await AsyncStorage.getItem('darkMode');
+    const asyncSkills = await AsyncStorage.getItem('skills');
+    const asyncCourses = await AsyncStorage.getItem('courses');
+    const asyncReports = await AsyncStorage.getItem('reports');
+    const asyncProfiles = await AsyncStorage.getItem('profiles');
+    const asyncPurchases = await AsyncStorage.getItem('purchases');
 
     if(asyncDarkMode){
       setDarkMode(asyncDarkMode === 'true');
     }
 
     if (asyncSession) {
-      sessionRef.current = JSON.parse(asyncSession);
       thisUserRef.current = asyncUser ? JSON.parse(asyncUser) : null;
       usersDataRef.current = asyncUsers ? JSON.parse(asyncUsers) : [];
       userDataRef.current = asyncProfile ? JSON.parse(asyncProfile) : null;
-      setUserId(userDataRef.current.id);
+      sessionRef.current = JSON.parse(asyncSession);
+      setUserId(userDataRef.current?.id ?? null);
+      setSkills(asyncSkills ? JSON.parse(asyncSkills) : [])
+      setCourses(asyncCourses ? JSON.parse(asyncCourses) : [])
+      setReports(asyncReports ? JSON.parse(asyncReports) : [])
+      setAllUsers(asyncProfiles ? JSON.parse(asyncProfiles) : [])
+      setPurchases(asyncPurchases ? JSON.parse(asyncPurchases) : [])
 
       setUpdateFlag(prev => !prev);
     }
@@ -96,14 +112,13 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const fetchSessionAndUserData = useCallback(async () => {
     try {
+      setLoading(true);
       const { data: { session: newSession } } = await supabase.auth.getSession();
 
       // if (!newSession) {
       //   clearUserData();
       //   return;
       // }
-      AsyncStorage.setItem('session', JSON.stringify(newSession));
-      sessionRef.current = newSession;
 
       const { data: { user } } = await supabase.auth.getUser();
       if (user) {
@@ -138,6 +153,7 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
           console.log("skills error:", sError);
           return;
         }
+        AsyncStorage.setItem('skills', JSON.stringify(skillsData));
         setSkills(skillsData);
   
         // Fetch profile_skills with join
@@ -149,15 +165,41 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
           console.log("profile_skills error:", psError);
           return;
         }
+
+        const { data: profiles, error: prError } = await supabase
+          .from('profiles')
+          .select('*');
+
+           // Merge skills into profiles
+        const allUsers : any = profiles?.map((user) => {
+          const offered = profileSkills
+            .filter(ps => ps.profile_id === user?.id && ps.category === "offered")
+            .map(ps => ps.skills);
+  
+          const required = profileSkills
+            .filter(ps => ps.profile_id === user?.id && ps.category === "required")
+            .map(ps => ps.skills);
+  
+          return {
+            ...user,
+            skillsOffered: offered,
+            skillsRequired: required
+          };
+        });
+  
+        if (!prError) {
+          AsyncStorage.setItem('profiles', JSON.stringify(allUsers));
+          setAllUsers(allUsers);
+        }
   
         // Merge skills into profiles
         const finalUsers : any = users?.map((user) => {
           const offered = profileSkills
-            .filter(ps => ps.profile_id !== profile?.id && ps.category === "offered")
+            .filter(ps => ps.profile_id === user?.id && ps.category === "offered")
             .map(ps => ps.skills);
   
           const required = profileSkills
-            .filter(ps => ps.profile_id !== profile?.id && ps.category === "required")
+            .filter(ps => ps.profile_id === user?.id && ps.category === "required")
             .map(ps => ps.skills);
   
           return {
@@ -171,6 +213,9 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
           AsyncStorage.setItem('users', JSON.stringify(finalUsers));
           usersDataRef.current = finalUsers;
         }
+
+        AsyncStorage.setItem('session', JSON.stringify(newSession));
+        sessionRef.current = newSession;
 
         if (!profileError) {
           setUserId(profile.id);
@@ -196,38 +241,53 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
         }
 
         const { data: coursesData, error: cError } = await supabase
-          .from("courses")
-          .select("*");
+            .from("courses")
+            .select("*")
+            .or(`status.eq.approved,owner_id.eq.${profile?.id ?? "null"}`)
+            .order("created_at", { ascending: false });
   
         if (cError) {
           console.log("courses error:", cError);
           return;
         }
+        AsyncStorage.setItem('courses', JSON.stringify(coursesData));
         setCourses(coursesData);
 
         const { data: reportsData, error: rError } = await supabase
           .from("reports")
           .select("*");
   
-        if (cError) {
+        if (rError) {
           console.log("reports error:", cError);
           return;
         }
+        AsyncStorage.setItem('reports', JSON.stringify(reportsData));
         setReports(coursesData);
+
+        const { data: purchaseData, error: prchError } = await supabase
+          .from("purchases")
+          .select("*");
+  
+        if (prchError) {
+          console.log("purchases error:", prchError);
+          return;
+        }
+        AsyncStorage.setItem('purchases', JSON.stringify(purchaseData));
+        setPurchases(purchaseData);
 
         // Trigger re-render by changing the state
         setUpdateFlag(prev => !prev); // Toggle the update flag
 
-        if(!profile){
-          router.replace('/CompleteProfile');
-        } else if(profile?.banned){
-          router.replace('/Banned')
-        } else {
-          router.replace('/(tabs)/Home');
-        }
+      //   if(!profile){
+      //     router.replace('/CompleteProfile');
+      //   } else if(profile?.banned){
+      //     router.replace('/Banned')
+      //   } else {
+      //     router.replace('/(tabs)/Home');
+      //   }
         
-      } else {
-        router.replace('/Login')
+      // } else {
+      //   router.replace('/Login')
       }
     } catch (error: any) {
       console.error('Error fetching data:', error.message);
@@ -244,6 +304,11 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
     AsyncStorage.removeItem('user');
     AsyncStorage.removeItem('users');
     AsyncStorage.removeItem('profile');
+    AsyncStorage.removeItem('skills');
+    AsyncStorage.removeItem('courses');
+    AsyncStorage.removeItem('reports');
+    AsyncStorage.removeItem('profiles');
+    AsyncStorage.removeItem('purchases');
     sessionRef.current = null;
     thisUserRef.current = null;
     usersDataRef.current = [];
@@ -272,7 +337,7 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
   //}, [fetchSessionAndUserData, clearUserData]);
   }, []);
 
-   useEffect(() => {
+  useEffect(() => {
     console.log("useEffect triggered by expoPushToken change:", expoPushToken);
     (async () => {
       try {
@@ -318,7 +383,7 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
         console.error('Error saving push token from useEffect:', err);
       }
     })();
-  }, [expoPushToken, userDataRef.current]); // runs whenever token changes
+  }, [expoPushToken, userDataRef.current]); // runs whenever token changes */
 
   // 🔹 Fetch unread counts for all chats in ONE query
   const fetchUnreadCounts = useCallback(async () => {
@@ -378,6 +443,30 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
     AsyncStorage.setItem('darkMode', value ? 'true' : 'false');
   }, []);
 
+  useEffect(() => {
+    if(!userId) return;
+
+    const profilesChannel = supabase
+      .channel("profiles-update")
+      .on(
+        "postgres_changes",
+        {
+          event: "*", // insert/update/delete
+          schema: "public",
+          table: "profiles",
+        },
+        () => {
+          // Re-fetch all counts whenever something changes
+          fetchSessionAndUserData();
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(profilesChannel);
+    };
+  }, [userId, fetchSessionAndUserData]);
+
   return (
     <UserContext.Provider value={{
       session: sessionRef.current,
@@ -405,6 +494,10 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
       setCourses,
       reports, 
       setReports,
+      allUsers,
+      setAllUsers,
+      purchases,
+      setPurchases,
       fetchSessionAndUserData,
       clearUserData
     }}>

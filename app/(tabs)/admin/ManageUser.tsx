@@ -266,14 +266,17 @@ export default function ManageUser() {
 }
 
 const styles = StyleSheet.create({
-container: { flex: 1, alignItems: "center" },
+container: { 
+  flex: 1, 
+  alignItems: "center" 
+},
   topbar: {
     width: "100%",
-    height: 64,
+    height: height * 0.06,
     alignItems: "center",
     justifyContent: "space-between",
     flexDirection: "row",
-    paddingHorizontal: 14,
+    // paddingHorizontal: 14,
   },
   headerTitle: { 
     fontSize: 20, 

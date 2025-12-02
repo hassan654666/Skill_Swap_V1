@@ -18,15 +18,17 @@ import { FontAwesome } from "@expo/vector-icons";
 
 const { width, height } = Dimensions.get("window");
 
-export default function ManageReports() {
-  const { userData, usersData, DarkMode, reports, setReports } = useUserContext();
+export default function Reports({searchText}:{searchText: string}) {
+  const { userData, usersData, DarkMode, reports, setReports, allUsers } = useUserContext();
 
   // const [reports, setReports] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
   const navigation = useNavigation<any>();
   const router = useRouter();
 
-  const [searchText, setSearchText] = useState<string>('');
+  console.log("ManageReports: incoming searchText:", JSON.stringify(searchText));
+
+  // const [searchText, setSearchText] = useState<string>('');
   const [showSearch, setShowSearch] = useState(false);
 
   // THEME
@@ -53,7 +55,8 @@ export default function ManageReports() {
 
       if (reportErr) throw reportErr;
 
-      setReports(reportData || []);
+      if(reportData)
+        setReports(reportData);
     } catch (err: any) {
       Alert.alert("Error", err.message);
     } 
@@ -107,30 +110,28 @@ export default function ManageReports() {
     }
   };
 
-  const toggleSearch = () => {
-        if (showSearch) {
-          Keyboard.dismiss();
-          setSearchText('');
-        }
-        setShowSearch(!showSearch);
-      };
+  // const toggleSearch = () => {
+  //       if (showSearch) {
+  //         Keyboard.dismiss();
+  //         setSearchText('');
+  //       }
+  //       setShowSearch(!showSearch);
+  //     };
     
       const searchData = reports?.filter((report: any) => {
 
         const reportedUser =
-          usersData?.find((p: any) => `${p.id}` === `${report.user_id}`) ||
-          (`${userData?.id}` === `${report.user_id}` ? userData : null);
+          allUsers?.find((p: any) => `${p.id}` === `${report.user_id}`);
 
         const reporter =
-          usersData?.find((p: any) => `${p.id}` === `${report.reporter_id}`) ||
-          (`${userData?.id}` === `${report.reporter_id}` ? userData : null);
+          allUsers?.find((p: any) => `${p.id}` === `${report.reporter_id}`);
 
         return(
-          report?.topic?.toLowerCase().includes(searchText?.toLowerCase()) 
-          || report?.message?.toLowerCase().includes(searchText?.toLowerCase()) 
-          || report?.status?.toLowerCase().includes(searchText?.toLowerCase()) 
-          || reportedUser?.name?.toLowerCase().includes(searchText?.toLowerCase()) 
-          || reporter?.name?.toLowerCase().includes(searchText?.toLowerCase())
+          (report?.topic || '').toLowerCase().includes(searchText?.toLowerCase()) 
+          || (report?.message || '').toLowerCase().includes(searchText?.toLowerCase()) 
+          || (report?.status || '').toLowerCase().includes(searchText?.toLowerCase()) 
+          || (reportedUser?.name || '').toLowerCase().includes(searchText?.toLowerCase()) 
+          || (reporter?.name || '').toLowerCase().includes(searchText?.toLowerCase())
         );
       });
 
@@ -139,12 +140,10 @@ export default function ManageReports() {
   // ------------------------------
   const renderReport = ({ item: report }: any) => {
     const reportedUser =
-      usersData?.find((p: any) => `${p.id}` === `${report.user_id}`) ||
-      (`${userData?.id}` === `${report.user_id}` ? userData : null);
+      allUsers?.find((p: any) => `${p.id}` === `${report.user_id}`);
 
     const reporter =
-      usersData?.find((p: any) => `${p.id}` === `${report.reporter_id}`) ||
-      (`${userData?.id}` === `${report.reporter_id}` ? userData : null);
+      allUsers?.find((p: any) => `${p.id}` === `${report.reporter_id}`);
 
 
     const isPending = report.status === "pending";
@@ -160,7 +159,7 @@ export default function ManageReports() {
         >
           <TouchableOpacity
               onPress={() => router.push({
-              pathname: '/(tabs)/admin/ManageUser',
+              pathname: '/admin/ManageUser',
               params:{
                 id: reportedUser?.id
               }
@@ -249,18 +248,18 @@ export default function ManageReports() {
   // ------------------------------
   return (
     <View style={[styles.container, {backgroundColor: backgroundColor}]}>
-      <View style= {{height: height * 0.12, width: '100%', justifyContent: 'space-between', backgroundColor: SecondaryBackgroundColor}}>
+      {/* <View style= {{height: height * 0.12, width: '100%', justifyContent: 'space-between', backgroundColor: SecondaryBackgroundColor}}>
           <View style= {[styles.topbar, {backgroundColor: SecondaryBackgroundColor}]}>
               <TouchableOpacity 
               // onPress={() => navigation.navigate('AdminDashboard')}
               style= { {margin: 10, marginLeft: 5, paddingHorizontal: 10} } >
-                  {/* <FontAwesome name="arrow-left" size={20} color={textColor} /> */}
+                  {/* <FontAwesome name="arrow-left" size={20} color={textColor} /> *
               <Text></Text>
               </TouchableOpacity>
               {!showSearch && (
                   <Text style={[styles.title, {color: textColor, backgroundColor: SecondaryBackgroundColor}]}>Manage Reports</Text>
-              )}
-              {showSearch && (
+              )} */}
+              {/* {showSearch && (
               <TextInput
                   style={[styles.input, {backgroundColor: inputColor}]}
                   placeholder='Search...'
@@ -271,7 +270,7 @@ export default function ManageReports() {
 
               <TouchableOpacity style={{ margin: 10, marginLeft: 20 }} onPress={toggleSearch}>
                   <FontAwesome name={showSearch ? 'close' : 'search'} size={20} color={textColor} />
-              </TouchableOpacity>
+              </TouchableOpacity> *
           </View>
           <View style = {[styles.navbar, {backgroundColor: SecondaryBackgroundColor}]}>
               <TouchableOpacity style ={styles.navButton} onPress={() => navigation.navigate('Users')}>
@@ -285,7 +284,7 @@ export default function ManageReports() {
                   <View style={styles.badge}>
                       <Text style={styles.badgeText}>{unreadCount < 99 ?unreadCount: "99+"}</Text>
                   </View>
-                  )} */}
+                  )} *
               </View>
               <Text style={styles.buttonText}>Courses</Text>
               </TouchableOpacity>
@@ -296,12 +295,12 @@ export default function ManageReports() {
                   <View style={styles.badge}>
                       <Text style={styles.badgeText}>{unreadCount < 99 ?unreadCount: "99+"}</Text>
                   </View>
-                  )} */}
+                  )} *
               </View>
               <Text style={styles.buttonText}>Reports</Text>
               </TouchableOpacity>
           </View>
-      </View>
+      </View> */ }
     <View style={{ width: '100%', flex: 1, backgroundColor, padding: 12 }}>
 
       {loading ? (
@@ -326,6 +325,7 @@ export default function ManageReports() {
 const styles = StyleSheet.create({
     container: {
       flex: 1,
+      width: '100%',
       justifyContent: 'center',
       alignItems: 'center',
     },

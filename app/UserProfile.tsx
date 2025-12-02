@@ -69,7 +69,7 @@ export default function UserProfile() {
   );
 
   async function fetchCachedUserSkills() {
-    if (!user?.id) return;
+    if (!userId) return;
 
       const offered = user.skillsOffered;
 
@@ -79,6 +79,10 @@ export default function UserProfile() {
       setRequiredSkills(required);
 
   }
+
+  useEffect(()=>{
+    fetchCachedUserSkills
+  },[userId])
 
   // ---------------------------
   // Fetch user's profile skills (join to skills table to get name & type)
@@ -287,10 +291,6 @@ export default function UserProfile() {
     };
   }, [user?.id]);
 
-  useEffect(()=>{
-    fetchCachedUserSkills
-  },[user?.id])
-
   // initial fetches
   useEffect(() => {
     if (!user?.id) return;
@@ -389,7 +389,9 @@ export default function UserProfile() {
         </View>
       </Modal>
 
-      <View style={{ flexDirection: "row", alignItems: "center", alignSelf: "flex-start", marginTop: 5, marginLeft: 110, marginBottom: 5 }}>
+      <View style={{width: '100%', flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center'}}>
+
+        <View style={{ flexDirection: "row", alignItems: "center", alignSelf: "flex-start", marginVertical: 5, marginLeft: 110 }}>
           {/* Full Stars */}
           {[...Array(fullStars)].map((_, i) => (
             <FontAwesome key={`full-${i}`} name="star" size={20} color="gold" />
@@ -406,29 +408,52 @@ export default function UserProfile() {
           <Text style={{ marginLeft: 5, fontSize: 16, color: textColor }}>
             ({user?.reviews})
           </Text>
+
         </View>
 
-      <View style={{width: width, flexDirection: "row", justifyContent: "space-evenly", alignItems: "center", marginTop: 20, }}>
+        <View style={{flexDirection: 'row', justifyContent: 'space-evenly', gap:20, padding: 10}}>
+          <TouchableOpacity style={[styles.smallButton, {backgroundColor: buttonColor}]} onPress={MessageUser}>
+            {/* <Text style={[styles.buttonText, {color: buttonTextColor}]}>Message</Text> */}
+            <FontAwesome name="comment" size={18} color={buttonTextColor} />
+          </TouchableOpacity>
+        
+          <TouchableOpacity
+            style={[styles.button, {backgroundColor: buttonColor}]}
+            onPress={showDatePicker}
+          >
+            <Text style={[styles.buttonText, {color: buttonTextColor}]}>
+              Schedule Meeting
+            </Text>
+            {/* <FontAwesome name="calendar" size={20} color={buttonTextColor} /> */}
+          </TouchableOpacity>
+        </View>
+
+        </View>
+
+      <View style={{width: width, flexDirection: "row", justifyContent: "flex-start", alignItems: "center", paddingHorizontal: 10, marginTop: 0, }}>
         <View style={styles.userInfo}>
             <Text style={[styles.title, { color: textColor, top: -20 }]}>{user?.name}</Text>
             <Text style={[styles.title, { color: textColor, top: -20, opacity: 0.6 }]}>@{user?.username}</Text>
-
             
         </View>
-        <TouchableOpacity style={[styles.smallButton, {backgroundColor: buttonColor, top: -20}]} onPress={MessageUser}>
+        {/* <TouchableOpacity style={[styles.smallButton, {backgroundColor: buttonColor, top: -20}]} onPress={MessageUser}> */}
           {/* <Text style={[styles.buttonText, {color: buttonTextColor}]}>Message</Text> */}
-          <FontAwesome name="comment" size={20} color={buttonTextColor} />
+          {/* <FontAwesome name="comment" size={20} color={buttonTextColor} />
         </TouchableOpacity>
         <TouchableOpacity
           style={[styles.smallButton, {backgroundColor: buttonColor, top: -20}]}
           onPress={showDatePicker}
-        >
+        > */}
           {/* <Text style={[styles.buttonText, {color: buttonTextColor}]}>
-            Select Date & Time
+            Schedule Meeting
           </Text> */}
-          <FontAwesome name="calendar" size={20} color={buttonTextColor} />
-        </TouchableOpacity>
+          {/* <FontAwesome name="calendar" size={20} color={buttonTextColor} />
+        </TouchableOpacity> */}
 
+        {/* <TouchableOpacity style={[styles.smallButton, {backgroundColor: buttonColor, top: -20}]} onPress={() => router.push({pathname: "/ReviewUser", params: {userId: user.id}})}> */}
+          {/* <Text style={[styles.buttonText, {color: buttonTextColor}]}>Message</Text> */}
+          {/* <FontAwesome name="camera" size={20} color={buttonTextColor} />
+        </TouchableOpacity> */}
       </View>
 
       <Text style={[styles.title, { color: textColor, paddingHorizontal: 20 }]}>{user?.description}</Text>
@@ -667,19 +692,20 @@ const styles = StyleSheet.create({
   },
   smallButton: {
     // width: '10%',
-    padding: width * 0.02,
+    padding: width * 0.014,
     borderRadius: 25,
     alignItems: 'center',
-    margin: 10,
+    // margin: 10,
   },
   button: {
-    width: '20%',
-    padding: 10,
-    borderRadius: 8,
+    minWidth: '20%',
+    padding: 7,
+    borderRadius: 15,
     alignItems: 'center',
-    margin: 10,
+    // margin: 10,
   },
   buttonText: {
+    fontSize: 10,
     fontWeight: 'bold',
   },
 

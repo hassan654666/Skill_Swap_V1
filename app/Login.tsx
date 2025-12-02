@@ -70,11 +70,11 @@ const Login: React.FC = () => {
   //   checkSession();
   // }, [session]);
 
-  // useFocusEffect(
-  //   React.useCallback(() => {
-  //     checkSession();
-  //   }, [session])
-  // );
+  useFocusEffect(
+    React.useCallback(() => {
+      checkSession();
+    }, [session])
+  );
 
   /*useEffect(() => {
     checkSession();
@@ -208,7 +208,7 @@ const styles = StyleSheet.create({
   input: {
     width: '80%',
     height: 40,
-    // padding: 10,
+    paddingLeft: 10,
     paddingRight: 50,
     borderWidth: 1,
     borderColor: '#ccc',

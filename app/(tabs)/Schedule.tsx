@@ -1,4 +1,4 @@
-import { Text, View, StyleSheet, TouchableOpacity, useColorScheme, Image, FlatList, Alert, Dimensions, BackHandler, Modal } from 'react-native';
+import { Text, View, StyleSheet, TouchableOpacity, useColorScheme, Image, FlatList, Alert, Dimensions, BackHandler, Modal, Pressable } from 'react-native';
 import { useRouter, useFocusEffect, useNavigation } from 'expo-router';
 import { useCallback, useEffect, useState } from 'react';
 import { useUserContext } from '@/components/UserContext';
@@ -28,6 +28,7 @@ export default function Schedule() {
   const [selectedUser, setSelectedUser] = useState<any>(null);
   const [showPicker, setShowPicker] = useState(false);
   const [message, setMessage] = useState('');
+  const [selectedTag, setSelectedTag] = useState<string | null>('Calendar');
 
   // 🎨 Color palette
   const textColor = DarkMode ? "#fff" : "#000";
@@ -327,6 +328,7 @@ function toDisplayDate(dateString: string | Date) {
          date.getFullYear();
 }
 
+const uniqueTypes = ['Calendar', 'Upcoming']; // or any dynamic tags
 
   // 📆 Calendar mark
   const markedDates = meetings.reduce((acc, meeting) => {
@@ -457,6 +459,66 @@ function toDisplayDate(dateString: string | Date) {
         /> */}
       </View>
 
+      <View style={{flexDirection: 'row', height: height * 0.04, justifyContent: 'center', alignSelf: 'flex-start'}}>
+          {uniqueTypes.map(tag => (
+            <Pressable
+              key={tag}
+              onPress={() => setSelectedTag(tag)}
+              style={{
+                height: height * 0.04,
+                minWidth: width/2,
+                paddingVertical: 0,
+                justifyContent: 'center',
+                alignItems: 'center',
+                paddingHorizontal: 10,
+                backgroundColor: selectedTag === tag ? buttonColor : TertiaryBackgroundColor,
+                borderRadius: 0,
+                borderColor: SecondaryBackgroundColor,
+                borderBottomWidth: 0.5,
+                borderLeftWidth: 0.5,
+                borderRightWidth: 0.5,
+                // marginRight: 8
+              }}
+            >
+              <Text style={{ color: selectedTag === tag ? buttonTextColor : textColor }}>{tag}</Text>
+            </Pressable>
+          ))}
+      </View>
+
+      {selectedTag === 'Upcoming' && (
+        <View style={{flex: 1, width: '100%'}}>
+        {showList ? (<FlatList
+          style={{padding: width * 0.03}}
+          data={usersData}
+          keyExtractor={(item) => item.id.toString()}
+          renderItem={renderUser}
+          ListEmptyComponent={
+            selectedDate ? (
+              <View>
+              <Text style={{ color: textColor, textAlign: 'center' }}>No users found.</Text>
+            </View>
+            ) : null
+          }
+        /> ) : (
+        <FlatList
+          style={{padding: width * 0.03}}
+          data={meetings.filter(m => new Date(m.datetime) > new Date())} // future meetings
+          keyExtractor={(item) => item.id.toString()}
+          renderItem={renderMeeting}
+          contentContainerStyle={{ paddingBottom: 100 }}
+          ListEmptyComponent={
+            <View>
+              <Text style={{ color: textColor, textAlign: 'center', marginTop: 20 }}>
+                No upcoming meetings.
+              </Text>
+            </View>
+          }
+        />)}
+        </View>
+      )}
+
+      {selectedTag === 'Calendar' && (
+      <View style={{flex: 1, width: '100%'}}>
       <Calendar
         key={DarkMode ? 'dark' : 'light'}
         onDayPress={handleDayPress}
@@ -479,18 +541,20 @@ function toDisplayDate(dateString: string | Date) {
       </Text>
 
       {showList ? (<FlatList
+        style={{padding: width * 0.03}}
         data={usersData}
         keyExtractor={(item) => item.id.toString()}
         renderItem={renderUser}
         ListEmptyComponent={
           selectedDate ? (
             <View>
-            <Text style={{ color: textColor, textAlign: 'center' }}>No meetings for this date.</Text>
+            <Text style={{ color: textColor, textAlign: 'center' }}>No users found.</Text>
           </View>
           ) : null
         }
       /> ) : (
       <FlatList
+        style={{padding: width * 0.03}}
         data={filteredMeetings}
         keyExtractor={(item) => item.id.toString()}
         renderItem={renderMeeting}
@@ -502,6 +566,8 @@ function toDisplayDate(dateString: string | Date) {
           ) : null
         }
       />)}
+      </View>
+      )}
       <View style={{ flexDirection: 'row', margin: 20, justifyContent: 'space-around' }}>
           <TouchableOpacity
           style={[styles.button, { backgroundColor: buttonColor }]}
@@ -590,7 +656,7 @@ const styles = StyleSheet.create({
     textAlign: 'center' 
   },
   meetingCard: {
-    width: '90%',
+    width: '100%',
     alignSelf: 'center',
     padding: 15,
     marginVertical: 8,

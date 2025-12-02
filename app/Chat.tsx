@@ -1173,7 +1173,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: '#ccc',
     borderRadius: 30,
-    //padding: 10,
+    paddingLeft: 10,
     textAlignVertical: 'center',
     flexGrow: 1,
   },

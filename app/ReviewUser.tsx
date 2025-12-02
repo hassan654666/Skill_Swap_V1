@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { View, Text, Image, TouchableOpacity, StyleSheet, Alert } from "react-native";
+import { View, Text, Image, TouchableOpacity, TextInput, StyleSheet, Alert } from "react-native";
 import { FontAwesome } from "@expo/vector-icons";
 import { supabase } from "@/lib/supabase";
 import { useLocalSearchParams, useRouter } from "expo-router";
@@ -12,6 +12,7 @@ export default function ReviewUser() {
   const router = useRouter();
 
   const [rating, setRating] = useState<number>(0);
+  const [review, setReview] = useState<string>();
   const [loading, setLoading] = useState(false);
 
   // 🎨 Color palette
@@ -31,7 +32,7 @@ export default function ReviewUser() {
     const { data, error } = await supabase
         .from("ratings")
         .upsert(
-        { user_id: userId, rated_by: ratedBy, rating },
+        { user_id: userId, rated_by: ratedBy, rating: rating, review: review },
         { onConflict: "user_id,rated_by" }
         );
 
@@ -100,6 +101,15 @@ export default function ReviewUser() {
         ))}
       </View>
 
+      <TextInput
+        style={[styles.input, {backgroundColor: inputColor}]}
+        placeholder="Feedback"
+        value={review}
+        onChangeText={setReview}
+        keyboardType="default"
+        autoCapitalize="sentences"
+      />
+
       <TouchableOpacity
         disabled={loading}
         onPress={handleRate}
@@ -149,6 +159,16 @@ const styles = StyleSheet.create({
   },
   star: {
     marginHorizontal: 6,
+  },
+  input: {
+    width: '80%',
+    // padding: 10,
+    height: 40,
+    paddingRight: 50,
+    borderWidth: 1,
+    borderColor: '#ccc',
+    borderRadius: 10,
+    marginBottom: 30,
   },
   submitBtn: {
     width: '30%',

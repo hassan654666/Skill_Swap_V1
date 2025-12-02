@@ -38,24 +38,24 @@ const SignupPage: React.FC = () => {
   const bubbleOneColor = DarkMode ? '#183B4E' : '#3D90D7';
   const bubbleTwoColor = DarkMode ? '#015551' : '#1DCD9F';
 
-  // const checkSession = async () => {
-  //   if(isFocused){
-  //     try {
-  //       if (session) {
-  //         router.replace('/(tabs)/Home')
-  //         //navigation.navigate('Home');
-  //       }
-  //     } catch (error) {
-  //       console.error('Navigation Error:', error);
-  //     }
-  //   }
-  // };
+  const checkSession = async () => {
+    if(isFocused){
+      try {
+        if (session) {
+          router.replace('/(tabs)/Home')
+          //navigation.navigate('Home');
+        }
+      } catch (error) {
+        console.error('Navigation Error:', error);
+      }
+    }
+  };
 
-  // useFocusEffect(
-  //   useCallback(() => {
-  //     checkSession();
-  //   }, [session])
-  // );
+  useFocusEffect(
+    useCallback(() => {
+      checkSession();
+    }, [session])
+  );
 
   const handleSignup = async () => {
     if(email === '' || password === '' || confirmPassword === ''){
@@ -68,7 +68,7 @@ const SignupPage: React.FC = () => {
           email,
           password,
           options: {
-            emailRedirectTo: 'skillswap://CompleteProfile',
+            emailRedirectTo: 'skillswap://Callback',
           },
         });  
         if (signUpError) throw signUpError;  
@@ -244,7 +244,7 @@ const styles = StyleSheet.create({
   input: { 
     width: '80%', 
     height: 40,
-    // padding: 10, 
+    paddingLeft: 10, 
     paddingRight: 50,
     borderWidth: 1, 
     borderColor: '#ccc', 
