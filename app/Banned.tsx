@@ -1,15 +1,16 @@
 import { Text, View, Image, StyleSheet, TouchableOpacity, useColorScheme, Alert } from 'react-native';
-import { useNavigation } from 'expo-router';
-import { useEffect, useState } from 'react';
+import { useFocusEffect, useNavigation, useRouter } from 'expo-router';
+import { useCallback, useEffect, useState } from 'react';
 import { useUserContext } from '@/components/UserContext';
 import { supabase } from '@/lib/supabase';
 import { useIsFocused } from '@react-navigation/native';
 
 export default function Banned() {
 
-    const { DarkMode, clearUserData } = useUserContext();
+    const { session, userData, DarkMode, clearUserData } = useUserContext();
     const [sessionChecked, setSessionChecked] = useState(false);
     const navigation = useNavigation<any>();
+    const router = useRouter();
     const isFocused = useIsFocused();
     const colorScheme = useColorScheme();
     // const DarkMode = colorScheme === 'dark';
@@ -21,8 +22,30 @@ export default function Banned() {
     const buttonColor = DarkMode ? "#004187ff" : "#007BFF";
     const redButton = DarkMode ? "#dc3545" : "#ff0000ff"
     const buttonTextColor = "#fff";
-      
-    console.log('Skill Swap rendered');
+
+    const checkSession = async () => {
+      if(isFocused){
+        try {
+          if (!session) {
+            router.replace('/Login');
+            //navigation.navigate('Login');
+          } else if(session && !userData.banned){
+            router.replace('/(tabs)/Home');
+          //   return;
+          } else {
+            return;
+          }
+        } catch (error) {
+          console.error('Navigation Error:', error);
+        }
+      }
+    };
+
+    useFocusEffect(
+      useCallback(() => {
+        checkSession();
+      }, [session])
+    );
 
     const handleLogout = async () => {
       try {

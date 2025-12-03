@@ -254,7 +254,7 @@ export default function Home() {
               </Text>
             ) :
             (types.map((type) => (
-              <View key={type} style={{ width: width * 0.7, flexDirection: 'row', flexWrap: "wrap", paddingLeft: 20, }}>
+              <View key={type} style={{ width: '80%', flexDirection: 'row', flexWrap: "wrap", paddingLeft: 20, }}>
                 <Text style={{ color: textColor, fontSize: 14, fontWeight: '500' }}>{type}:</Text>
                 {groupedUserSkills[type].map((skill: any) => (
                   <Text key={skill.id} style={{ color: textColor, fontSize: 14, fontWeight: '400', marginLeft: 5}}>
@@ -513,14 +513,14 @@ export default function Home() {
       paddingHorizontal: 10,
     },
     logo: {
-      width: 80,
-      height: 80,
+      width: width * 0.08,
+      height: width * 0.08,
       borderRadius: 90,
 
     },
     avatar: {
-      width: 40,
-      height: 40,
+      width: width * 0.1,
+      height: width * 0.1,
       borderRadius: 90,
       justifyContent: 'center',
       alignItems: 'center',
@@ -529,11 +529,11 @@ export default function Home() {
     },
     flatlist: {
       width: '100%',
-
+      paddingTop: height * 0.01,
     },
     username: {
       color: 'black',
-      width: 100,
+      width: width * 0.2,
       fontSize: 9,
       fontWeight: 'bold',
       textAlign: 'center',
@@ -564,8 +564,8 @@ export default function Home() {
       //backgroundColor: 'red'
     },
     usersItem: {
-      padding: 20,
-      margin: 10,
+      padding: width * 0.05,
+      margin: width * 0.01,
       //paddingLeft: 40,
       marginBottom: 10,
       borderRadius: 8,
@@ -623,22 +623,22 @@ export default function Home() {
       color: '#f5f5f5',
       fontWeight: 'bold',
     },
-    badge: {
-      position: "absolute",
-      top: -5,      // pushes it slightly above the icon
-      right: -10,   // shifts it to the right edge of the icon
-      backgroundColor: "red",
-      borderRadius: 10,
-      minWidth: 18, // ensures it stays round
-      paddingHorizontal: 5,     // allows growth for larger numbers
-      height: 18,
-      justifyContent: "center",
-      alignItems: "center",
-    },
-    badgeText: {
-      color: "white",
-      fontSize: 11,
-      fontWeight: "bold",
-    },
+    // badge: {
+    //   position: "absolute",
+    //   top: -5,      // pushes it slightly above the icon
+    //   right: -10,   // shifts it to the right edge of the icon
+    //   backgroundColor: "red",
+    //   borderRadius: 10,
+    //   minWidth: 18, // ensures it stays round
+    //   paddingHorizontal: 5,     // allows growth for larger numbers
+    //   height: 18,
+    //   justifyContent: "center",
+    //   alignItems: "center",
+    // },
+    // badgeText: {
+    //   color: "white",
+    //   fontSize: 11,
+    //   fontWeight: "bold",
+    // },
 
   });

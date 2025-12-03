@@ -384,7 +384,7 @@ export default function Courses() {
           </View>
         )}
       />
-      {userData.rating >= 1 && userData.reviews >= 0 ? (
+      {userData.rating >= 4 && userData.reviews >= 10 ? (
           <TouchableOpacity onPress={() => router.push("/UploadCourse")} style={[styles.addBtn, { backgroundColor: buttonColor, margin: 10, alignSelf: 'flex-end' }]}>
             <FontAwesome name="plus" size={16} color="#fff" />
             <Text style={{ color: "#fff", marginLeft: 8 }}>Create Course</Text>

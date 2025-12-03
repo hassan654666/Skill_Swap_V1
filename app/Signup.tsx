@@ -68,44 +68,12 @@ const SignupPage: React.FC = () => {
           email,
           password,
           options: {
-            emailRedirectTo: 'skillswap://Callback',
+            emailRedirectTo: 'skillswap://Home',
           },
         });  
         if (signUpError) throw signUpError;  
         Alert.alert('Success', 'Account created! Please check your email for confirmation.');
         setUser(userdata?.user);
-        /* try {
-          const { data: insertData, error: insertError } = await supabase.from('profiles').upsert({
-            authid: userdata?.user?.id,
-            name: name,
-            username: username,
-            email: email,
-            skillsOffered: skillsoffered,
-            skillsRequired: skillsrequired,
-          });
-          if (insertError) throw insertError;
-          console.log('User data saved:', insertData);  
-        } catch (insertError: any) {
-          Alert.alert('Error', insertError.message);
-        }
-        try {
-          const { error } = await supabase.auth.signInWithPassword({ email, password });
-          if (error) throw error;
-          //Alert.alert('Success', 'You have logged in!');
-          //fetchSessionAndUserData();
-          // // const token = await registerForPushNotificationsAsync();
-          // // if (token) {
-          // //   await supabase
-          // //     .from('profiles')
-          // //     .upsert({ expo_token: token })
-          // //     .eq('authid', userdata?.user?.id);
-          // // }
-          router.replace('/(tabs)/Home');
-          //navigation.navigate('Home');
-        } catch (error: any) {
-          Alert.alert('Error', error.message);
-          clearUserData();
-        } */
       } catch (error: any) {
         Alert.alert('Error', error.message);
       } 
