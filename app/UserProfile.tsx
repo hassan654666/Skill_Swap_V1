@@ -390,70 +390,55 @@ export default function UserProfile() {
       </Modal>
 
       <View style={{width: '100%', flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center'}}>
-
-        <View style={{ flexDirection: "row", alignItems: "center", alignSelf: "flex-start", marginVertical: 5, marginLeft: 110 }}>
+       <View style={{ flexDirection: "row", alignItems: "center", alignSelf: "flex-start", marginVertical: 5, marginLeft: width * 0.25}}>
           {/* Full Stars */}
           {[...Array(fullStars)].map((_, i) => (
-            <FontAwesome key={`full-${i}`} name="star" size={20} color="gold" />
+               <FontAwesome key={`full-${i}`} name="star" size={14} color="gold" />
           ))}
 
           {/* Half Star */}
-          {halfStar && <FontAwesome name="star-half-full" size={20} color="gold" />}
+          {halfStar && <FontAwesome name="star-half-full" size={14} color="gold" />}
 
           {/* Empty Stars */}
           {[...Array(emptyStars)].map((_, i) => (
-            <FontAwesome key={`empty-${i}`} name="star-o" size={20} color="grey" />
+            <FontAwesome key={`empty-${i}`} name="star-o" size={14} color="grey" />
           ))}
 
-          <Text style={{ marginLeft: 5, fontSize: 16, color: textColor }}>
+          <Text style={{ marginLeft: 5, fontSize: 12, color: textColor }}>
             ({user?.reviews})
           </Text>
 
         </View>
-
-        <View style={{flexDirection: 'row', justifyContent: 'space-evenly', gap:20, padding: 10}}>
-          <TouchableOpacity style={[styles.smallButton, {backgroundColor: buttonColor}]} onPress={MessageUser}>
-            {/* <Text style={[styles.buttonText, {color: buttonTextColor}]}>Message</Text> */}
-            <FontAwesome name="comment" size={18} color={buttonTextColor} />
+        <View style={{width: '40%',flexDirection: 'column',  justifyContent: 'center', alignItems: 'flex-end', marginTop: height * 0.01, gap:10, paddingRight: width * 0.02}}>
+          <TouchableOpacity style={[styles.shortButton, {flexDirection: 'row',backgroundColor: buttonColor}]} onPress={MessageUser}>
+            {/* <FontAwesome name="comment" size={14} color={buttonTextColor} /> */}
+            <Text style={[styles.buttonText, {color: buttonTextColor}]}>Chat</Text>
           </TouchableOpacity>
+        </View>
+      </View>
+
+      <View style={{width: '100%', flexDirection: 'row', justifyContent: 'space-between', marginTop: height * 0.01, alignItems: 'flex-start'}}>
+
+      <View style={styles.userInfo}>
+          <Text style={[styles.title, { color: textColor, top: -height * 0.02 }]}>{user?.name}</Text>
+          <Text style={[styles.title, { color: textColor, top: -height * 0.02, opacity: 0.6 }]}>@{user?.username}</Text>
+      </View>
+
+        <View style={{width: '40%',flexDirection: 'column',  justifyContent: 'center', alignItems: 'flex-end', gap:10, paddingRight: width * 0.02}}>
+          {/* <TouchableOpacity style={[styles.smallButton, {backgroundColor: buttonColor}]} onPress={MessageUser}>
+            <FontAwesome name="comment" size={18} color={buttonTextColor} /> top: -height * 0.03,
+          </TouchableOpacity> */}
         
           <TouchableOpacity
-            style={[styles.button, {backgroundColor: buttonColor}]}
+            style={[styles.button, {flexDirection: 'row', backgroundColor: buttonColor}]}
             onPress={showDatePicker}
           >
+            {/* <FontAwesome name="calendar" size={20} color={buttonTextColor} /> */}
             <Text style={[styles.buttonText, {color: buttonTextColor}]}>
               Schedule Meeting
             </Text>
-            {/* <FontAwesome name="calendar" size={20} color={buttonTextColor} /> */}
           </TouchableOpacity>
         </View>
-
-        </View>
-
-      <View style={{width: width, flexDirection: "row", justifyContent: "flex-start", alignItems: "center", paddingHorizontal: 10, marginTop: 0, }}>
-        <View style={styles.userInfo}>
-            <Text style={[styles.title, { color: textColor, top: -20 }]}>{user?.name}</Text>
-            <Text style={[styles.title, { color: textColor, top: -20, opacity: 0.6 }]}>@{user?.username}</Text>
-            
-        </View>
-        {/* <TouchableOpacity style={[styles.smallButton, {backgroundColor: buttonColor, top: -20}]} onPress={MessageUser}> */}
-          {/* <Text style={[styles.buttonText, {color: buttonTextColor}]}>Message</Text> */}
-          {/* <FontAwesome name="comment" size={20} color={buttonTextColor} />
-        </TouchableOpacity>
-        <TouchableOpacity
-          style={[styles.smallButton, {backgroundColor: buttonColor, top: -20}]}
-          onPress={showDatePicker}
-        > */}
-          {/* <Text style={[styles.buttonText, {color: buttonTextColor}]}>
-            Schedule Meeting
-          </Text> */}
-          {/* <FontAwesome name="calendar" size={20} color={buttonTextColor} />
-        </TouchableOpacity> */}
-
-        {/* <TouchableOpacity style={[styles.smallButton, {backgroundColor: buttonColor, top: -20}]} onPress={() => router.push({pathname: "/ReviewUser", params: {userId: user.id}})}> */}
-          {/* <Text style={[styles.buttonText, {color: buttonTextColor}]}>Message</Text> */}
-          {/* <FontAwesome name="camera" size={20} color={buttonTextColor} />
-        </TouchableOpacity> */}
       </View>
 
       <Text style={[styles.title, { color: textColor, paddingHorizontal: 20 }]}>{user?.description}</Text>
@@ -602,7 +587,7 @@ const styles = StyleSheet.create({
   },
   headerContainer: {
     width: '100%',
-    height: 150,
+    height: height * 0.175,
     position: 'relative',
   },
   headerImage: {
@@ -612,10 +597,10 @@ const styles = StyleSheet.create({
   },
   avatar: {
     position: 'absolute',
-    bottom: -20,
-    left: 15,
-    width: 80,
-    height: 80,
+    bottom: -height * 0.025,
+    left: width * 0.03,
+    width:  width * 0.2,
+    height: width * 0.2,
     borderRadius: 0,
     borderWidth: 1,
     borderColor: '#fff',
@@ -623,17 +608,21 @@ const styles = StyleSheet.create({
   scrollContent: {
     // paddingTop: 25,
     alignItems: 'center',
-    paddingBottom: 20,
+    // paddingBottom: 20,
     width: '100%',
   },
   userInfo: { 
-    // paddingBottom: 10,
-    width: '55%', 
+    width: '60%', 
+    flexDirection: "column", 
+    justifyContent: "center", 
+    alignItems: "flex-start",
+    paddingLeft: width * 0.02, 
+    marginTop: 0,
   },
   title: { 
     fontSize: 16, 
     fontWeight: '600',
-    marginBottom: 6 
+    // marginBottom: 6 
   },
   modalOverlay: {
     flex: 1,
@@ -691,21 +680,32 @@ const styles = StyleSheet.create({
     marginBottom: 10
   },
   smallButton: {
-    // width: '10%',
-    padding: width * 0.014,
-    borderRadius: 25,
+    width:  width * 0.09,
+    height: width * 0.09,
+    padding: width * 0.02,
+    borderRadius: 90,
     alignItems: 'center',
+    justifyContent: 'center',
     // margin: 10,
   },
   button: {
-    minWidth: '20%',
-    padding: 7,
-    borderRadius: 15,
+    width: width * 0.3,
+    padding: width * 0.02,
+    borderRadius: 20,
     alignItems: 'center',
+    justifyContent: 'center',
+    // margin: 10,
+  },
+   shortButton: {
+    width: width * 0.125,
+    padding: width * 0.02,
+    borderRadius: 20,
+    alignItems: 'center',
+    justifyContent: 'center',
     // margin: 10,
   },
   buttonText: {
-    fontSize: 10,
+    fontSize: 14,
     fontWeight: 'bold',
   },
 

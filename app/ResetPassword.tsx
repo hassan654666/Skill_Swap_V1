@@ -12,7 +12,7 @@ export default function ResetPassword() {
   const [loading, setLoading] = useState(true);
   const [localUserData, setLocalUserData] = useState<any>(null);
 
-  const { isRecovery, setIsRecovery, DarkMode } = useUserContext();
+  const { DarkMode, isRecovery, setIsRecovery } = useUserContext();
   const colorScheme = useColorScheme();
   const router = useRouter();
 
@@ -26,11 +26,8 @@ export default function ResetPassword() {
   const redButton = DarkMode ? "#dc3545" : "#ff0000ff"
   const linkTextColor = DarkMode ? "#007bffff" : "#0040ffff";
   const buttonTextColor = "#fff";
-  const bubbleOneColor = DarkMode ? '#183B4E' : '#3D90D7';
-  const bubbleTwoColor = DarkMode ? '#015551' : '#1DCD9F';
-
-  useEffect(() => {
-  const restoreSessionFromDeepLink = async (url?: any) => {
+  
+  const restoreSessionFromDeepLink = useCallback(async (url?: any) => {
     try {
       if (!url) {
         url = await Linking.getInitialURL();
@@ -82,19 +79,23 @@ export default function ResetPassword() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [setIsRecovery]);
+  
+  useFocusEffect(
 
-  // 🟢 Handle initial URL on cold start
-  restoreSessionFromDeepLink();
+    useCallback(() => {
+      // 🟢 Handle initial URL on cold start
+      restoreSessionFromDeepLink(null);
 
-  // 🟢 Handle when app already open (foreground deep links)
-  const sub = Linking.addEventListener('url', (event) => {
-    console.log('URL event received:', event.url);
-    restoreSessionFromDeepLink(event.url);
-  });
+      // 🟢 Handle when app already open (foreground deep links)
+      const sub = Linking.addEventListener('url', (event) => {
+        console.log('URL event received:', event.url);
+        restoreSessionFromDeepLink(event.url);
+      });
 
-  return () => sub.remove();
-}, []);
+      return () => sub.remove();
+    }, [restoreSessionFromDeepLink])
+  );
 
   // --- Fetch user data once email is known ---
   useEffect(() => {
@@ -146,7 +147,7 @@ export default function ResetPassword() {
       if (error) throw error;
 
       setIsRecovery(false);
-      // await supabase.auth.signOut();
+      await supabase.auth.signOut();
       Alert.alert('Success', 'Password reset successfully!');
       router.replace('/Login');
     } catch (err: any) {
@@ -172,9 +173,9 @@ export default function ResetPassword() {
         style={styles.logo}
       />
       <View style={styles.content}>
-        <Text style={[styles.name, { color: textColor }]}>Name: {localUserData?.name}</Text>
-        <Text style={[styles.userName, { color: textColor }]}>Username: @{localUserData?.username}</Text>
-        <Text style={[styles.userName, { color: textColor }]}>Email: {userEmail}</Text>
+        <Text style={[styles.name, { color: textColor }]}>{localUserData?.name}</Text>
+        <Text style={[styles.userName, { color: textColor }]}>@{localUserData?.username}</Text>
+        {/* <Text style={[styles.userName, { color: textColor }]}>Email: {userEmail}</Text> */}
       </View>
 
       <TextInput
@@ -197,9 +198,9 @@ export default function ResetPassword() {
         <Text style={[styles.buttonText, { color: buttonTextColor }]}>Save</Text>
       </TouchableOpacity>
 
-      <TouchableOpacity style={[styles.button, { backgroundColor: buttonColor }]} onPress={backAction}>
+      {!isRecovery && (<TouchableOpacity style={[styles.button, { backgroundColor: buttonColor }]} onPress={backAction}>
         <Text style={[styles.buttonText, { color: buttonTextColor }]}>Cancel</Text>
-      </TouchableOpacity>
+      </TouchableOpacity>)}
     </View>
   );
 }

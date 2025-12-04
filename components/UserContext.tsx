@@ -243,7 +243,6 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
         const { data: coursesData, error: cError } = await supabase
             .from("courses")
             .select("*")
-            .or(`status.eq.approved,owner_id.eq.${profile?.id ?? "null"}`)
             .order("created_at", { ascending: false });
   
         if (cError) {
@@ -255,14 +254,15 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
         const { data: reportsData, error: rError } = await supabase
           .from("reports")
-          .select("*");
+          .select("*")
+          .order("id", { ascending: false });
   
         if (rError) {
           console.log("reports error:", cError);
           return;
         }
         AsyncStorage.setItem('reports', JSON.stringify(reportsData));
-        setReports(coursesData);
+        setReports(reportsData);
 
         const { data: purchaseData, error: prchError } = await supabase
           .from("purchases")

@@ -46,11 +46,37 @@ export default function ManageUser() {
   // --------------------
   // FETCH USER DETAILS
   // --------------------
+  const fetchCachedUser = async () => {
+    try {
+      setLoading(true);
+      setUser(usersData.find(user => user.id === userId));
+    } catch (err: any) {
+      Alert.alert("Error", err.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchCachedUser();
+  }, [userId]);
+
+  // --------------------
+  // FETCH USER DETAILS
+  // --------------------
   const fetchUser = async () => {
     try {
       setLoading(true);
 
-      setUser(usersData.find(user => user.id === userId));
+      const { data, error } = await supabase
+        .from("profiles")
+        .select("*")
+        .eq("id", userId)
+        .single();
+
+      if (error) throw error;
+
+      setUser(data);
     } catch (err: any) {
       Alert.alert("Error", err.message);
     } finally {
@@ -66,6 +92,10 @@ export default function ManageUser() {
   // SEND WARNING
   // --------------------
   const sendWarning = async () => {
+    if (user.is_admin) {
+      return Alert.alert("Alert", "You cannot warn another admin.");
+    }
+
     if (!warningMessage.trim()) {
       return Alert.alert("Alert", "Please write a warning message.");
     }
@@ -95,6 +125,10 @@ export default function ManageUser() {
   // BAN USER
   // --------------------
   const toggleBan = async () => {
+    if (user.is_admin) {
+      return Alert.alert("Alert", "You cannot ban another admin.");
+    }
+
     const newStatus = !user.banned;
 
     try {
@@ -106,6 +140,15 @@ export default function ManageUser() {
         .eq("id", userId);
 
       if (error) throw error;
+
+      const { error: notifError } = await supabase.from("notifications").insert({
+        user_id: userId,
+        title: newStatus ? "🚫 Banned" : "✔ Un-Banned",
+        message: newStatus ? 'You have been banned from the skill swap app' : 'You have been un-banned on the skill swap app',
+        type: newStatus ? "banned" : "unbanned",
+      });
+
+      if (notifError) throw notifError;
 
       Alert.alert("Success", newStatus ? "User banned." : "User unbanned.");
       fetchUser();
@@ -196,7 +239,7 @@ export default function ManageUser() {
         </View>
 
         {/* WARNING INPUT */}
-        <View
+        {!user.is_admin && (<View
           style={{
             backgroundColor: SecondaryBackgroundColor,
             padding: 16,
@@ -240,10 +283,10 @@ export default function ManageUser() {
               Send Warning
             </Text>
           </TouchableOpacity>
-        </View>
+        </View>)}
 
         {/* BAN / UNBAN BUTTON */}
-        <TouchableOpacity
+        {!user.is_admin ? (<TouchableOpacity
           onPress={toggleBan}
           style={{
             backgroundColor: user.banned ? buttonColor : redButton,
@@ -258,7 +301,10 @@ export default function ManageUser() {
           <Text style={{ color: "#fff", fontWeight: "700", fontSize: 16 }}>
             {user.banned ? "Unban User" : "Ban User"}
           </Text>
-        </TouchableOpacity>
+        </TouchableOpacity>) : (
+        <Text style={{ alignSelf: 'center', color: "#fff", fontWeight: "700", fontSize: 16 }}>
+          This user is an admin
+        </Text>)}
       </View>
     </ScrollView>
     </View>

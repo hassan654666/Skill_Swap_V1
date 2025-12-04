@@ -2,7 +2,7 @@
   "expo": {
     "name": "Skill Swap",
     "slug": "skillswap",
-    "version": "0.1.4",
+    "version": "0.1.8",
     "orientation": "default",
     "icon": "./assets/images/icon.png",
     "scheme": "skillswap",

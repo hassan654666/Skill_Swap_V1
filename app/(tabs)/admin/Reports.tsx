@@ -21,7 +21,7 @@ const { width, height } = Dimensions.get("window");
 export default function Reports({searchText}:{searchText: string}) {
   const { userData, usersData, DarkMode, reports, setReports, allUsers } = useUserContext();
 
-  // const [reports, setReports] = useState<any[]>([]);
+  const [localReports, setLocalReports] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
   const navigation = useNavigation<any>();
   const router = useRouter();
@@ -44,6 +44,22 @@ export default function Reports({searchText}:{searchText: string}) {
   const bubbleOneColor = DarkMode ? '#183B4E' : '#3D90D7';
   const bubbleTwoColor = DarkMode ? '#015551' : '#1DCD9F';
 
+  const loadCachedReports = async () => {
+    try {
+      setLoading(true);
+      const cachedReports = reports.filter((c: any) => c.user_id !== userData.id);
+      setLocalReports(cachedReports);
+    } catch (error) {
+      console.error('Failed to load cached reports:', error);
+      setLoading(false);
+    }
+    setLoading(false);
+  };
+
+  useEffect(() => {
+    loadCachedReports();
+  }, [userData?.id]);
+
   // ------------------------------
   // FETCH REPORTS + PROFILES
   // ------------------------------
@@ -51,12 +67,12 @@ export default function Reports({searchText}:{searchText: string}) {
     try {
 
       const { data: reportData, error: reportErr } =
-        await supabase.from("reports").select("*").order("id", { ascending: false });
+        await supabase.from("reports").select("*").neq("user_id", userData.id).order("id", { ascending: false });
 
       if (reportErr) throw reportErr;
 
       if(reportData)
-        setReports(reportData);
+        setLocalReports(reportData);
     } catch (err: any) {
       Alert.alert("Error", err.message);
     } 
@@ -118,7 +134,7 @@ export default function Reports({searchText}:{searchText: string}) {
   //       setShowSearch(!showSearch);
   //     };
     
-      const searchData = reports?.filter((report: any) => {
+      const searchData = localReports?.filter((report: any) => {
 
         const reportedUser =
           allUsers?.find((p: any) => `${p.id}` === `${report.user_id}`);

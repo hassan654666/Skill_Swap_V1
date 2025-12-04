@@ -24,11 +24,11 @@ import { FontAwesome } from "@expo/vector-icons";
 const { width, height } = Dimensions.get("window");
 
 export default function Courses() {
-  const { userData, DarkMode, courses, setCourses, skills, purchases } = useUserContext();
+  const { userData, DarkMode, courses, skills, purchases } = useUserContext();
   const router = useRouter();
   const navigation = useNavigation<any>();
 
-  // const [courses, setCourses] = useState<any[]>([]);
+  const [localCourses, setLocalCourses] = useState<any[]>([]);
   // const [purchases, setPurchases] = useState<any>();
   const [loading, setLoading] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
@@ -50,6 +50,22 @@ export default function Courses() {
   const buttonTextColor = "#fff";
   const bubbleOneColor = DarkMode ? '#183B4E' : '#3D90D7';
   const bubbleTwoColor = DarkMode ? '#015551' : '#1DCD9F';
+  
+  const loadCachedCourses = async () => {
+    try {
+      setLoading(true);
+      const cachedCourses = courses.filter((c: any) => c.status === 'approved' || c.owner_id === userData.id);
+      setLocalCourses(cachedCourses);
+    } catch (error) {
+      console.error('Failed to load cached courses:', error);
+      setLoading(false);
+    }
+    setLoading(false);
+  };
+
+  useEffect(() => {
+    loadCachedCourses();
+  }, [userData?.id]);
 
   const fetchCourses = async () => {
     try {
@@ -63,7 +79,7 @@ export default function Courses() {
 
       const { data, error } = await query;
       if (error) throw error;
-      setCourses(data ?? []);
+      setLocalCourses(data ?? []);
     } catch (err) {
       console.error("fetchCourses", err);
     } finally {
@@ -122,7 +138,7 @@ export default function Courses() {
     setShowSearch(!showSearch);
   };
 
-  const searchData = (courses || []).filter((course: any) =>{
+  const searchData = (localCourses || []).filter((course: any) =>{
 
      // Basic text search
     const matchesText =

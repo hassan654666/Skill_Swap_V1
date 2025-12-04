@@ -72,7 +72,7 @@ export default function TabLayout() {
   }
 
   if (isRecovery) {
-    return <ResetPassword />;
+    return <ResetPassword />
   }
 
   if (!userData) {

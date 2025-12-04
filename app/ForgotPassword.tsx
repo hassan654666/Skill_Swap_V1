@@ -51,7 +51,7 @@ const ForgotPassword: React.FC = () => {
 
   return (
     <View style={[styles.container, {backgroundColor: backgroundColor}]}>
-      <Text style={styles.title}>Forgot Password</Text>
+      <Text style={[styles.title, {color: textColor}]}>Forgot Password</Text>
       <Image source={require('./logo.png')} style={styles.logo} />
       <TextInput
         style={[styles.input, {backgroundColor: inputColor}]}
