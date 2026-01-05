@@ -167,9 +167,26 @@ export default function Chat() {
     }
   };
 
+  const getFileTextIcon = (mimeType?: string): string => {
+    if (!mimeType) return "📄"; // default file
+
+    if (mimeType.startsWith("image/")) return "🖼️";
+    if (mimeType.startsWith("video/")) return "🎬";
+    if (mimeType.startsWith("audio/")) return "🎵";
+
+    if (mimeType.includes("pdf")) return "📕";
+    if (mimeType.includes("word") || mimeType.includes("document")) return "📘";
+    if (mimeType.includes("excel") || mimeType.includes("spreadsheet")) return "📗";
+
+    if (mimeType.includes("zip") || mimeType.includes("compressed")) return "🗜️";
+
+    return "📄"; // fallback
+  };
+
   const sendMessage = async (text = content, fileUrl: string | null = null, fileName: string | null = null, fileType: string | null = null) => {
     if (!content.trim() && !fileUrl && !fileType) return; // Prevent sending empty messages
 
+    const lastText = content !== '' ? content : fileType ? (getFileTextIcon(fileType) + ` ${fileName}`) : '';
     let activeChatId = thisChat_Id;
     
     if (!activeChatId && inboxItems.length > 0) {
@@ -182,7 +199,7 @@ export default function Chat() {
     if (!activeChatId && inboxItems.length === 0) {
       const { data: newChat, error: chatInsertError } = await supabase
         .from('chat')
-        .insert([{ sender_Id: senderId, receiver_Id: receiverId, last_text: content !== '' ? content : fileName, last_sender: senderId, updated_at: new Date() }])
+        .insert([{ sender_Id: senderId, receiver_Id: receiverId, last_text: lastText, last_sender: senderId, updated_at: new Date() }])
         .select()
         .single();
   
@@ -196,7 +213,7 @@ export default function Chat() {
     } else {
       const { error: chatUpdateError } = await supabase
         .from('chat')
-        .update({ last_text: content !== '' ? content : fileName, last_sender: senderId, updated_at: new Date() })
+        .update({ last_text: lastText, last_sender: senderId, updated_at: new Date() })
         .eq('id', activeChatId);
       
       if (chatUpdateError) {

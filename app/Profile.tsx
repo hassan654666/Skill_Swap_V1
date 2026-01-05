@@ -77,9 +77,9 @@ export default function Profile() {
   async function fetchCachedUserSkills() {
     if (!userData?.id) return;
 
-      const offered = userData.skillsOffered
+      const offered = userData.skillsOffered || [];
 
-      const required = userData.skillsRequired
+      const required = userData.skillsRequired || [];
 
       setOfferedSkills(offered);
       setRequiredSkills(required);
@@ -437,7 +437,14 @@ export default function Profile() {
         <View style={styles.userInfo}>
           <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: "center"}}>
             <Text style={[styles.title, { color: textColor }]}>{userData?.name}</Text>
-            <View style={{ flexDirection: "row", alignItems: "center" }}>
+            <TouchableOpacity 
+              style={{ flexDirection: "row", alignItems: "center" }}
+              onPress={() => router.push({
+              pathname: '/Reviews',
+              params: {
+                userId: userData?.id || ''
+              }
+            })}>
               {/* Full Stars */}
               {[...Array(fullStars)].map((_, i) => (
                 <FontAwesome key={`full-${i}`} name="star" size={20} color="gold" />
@@ -454,7 +461,7 @@ export default function Profile() {
               <Text style={{ marginLeft: 5, fontSize: 16, color: textColor }}>
                 ({userData?.reviews})
               </Text>
-            </View>
+            </TouchableOpacity>
           </View>
             
             <Text style={[styles.title, { color: textColor, opacity: 0.6, marginBottom: 14 }]}>@{userData?.username}</Text>
@@ -521,7 +528,7 @@ export default function Profile() {
                         <Text style={{ color: textColor, fontSize: 15 }}>
                           • {skill.name}
                         </Text>
-                        <FontAwesome name="trash" size={16} color="white" onPress={() => deleteSkill(skill.id, activeTab)} />
+                        <FontAwesome name="trash" size={16} color={textColor} onPress={() => deleteSkill(skill.id, activeTab)} />
                       </View>
                     ))} 
                     
@@ -559,6 +566,20 @@ export default function Profile() {
         </View>
       )}
 
+      {/* Save button (enabled only when we have unsaved additions) */}
+      {saveActive && (<View style={{ width: "100%", alignItems: "center"}}>
+        <TouchableOpacity
+          style={[
+            styles.saveButton,
+            { backgroundColor: saveActive ? buttonColor : "#888" }
+          ]}
+          disabled={!saveActive}
+          onPress={saveSkillsToDB}
+        >
+          <Text style={{ color: "#fff", fontWeight: "700" }}>Save</Text>
+        </TouchableOpacity>
+      </View>)}
+
       {/* Add button under the listed skills (requested) */}
       {showPicker ? (<View style={{ width: "100%", flexDirection: "row", justifyContent: "space-around"}}>
         <TouchableOpacity
@@ -581,20 +602,6 @@ export default function Profile() {
           onPress={() => {setShowPicker(true); setActiveTab("required");}}
         >
           <Text style={{ color: "#fff", fontWeight: "600" }}>{!showPicker ? "Add Required Skill" : "Cancel"}</Text>
-        </TouchableOpacity>
-      </View>)}
-
-      {/* Save button (enabled only when we have unsaved additions) */}
-      {saveActive && (<View style={{ width: "100%", alignItems: "center"}}>
-        <TouchableOpacity
-          style={[
-            styles.saveButton,
-            { backgroundColor: saveActive ? buttonColor : "#888" }
-          ]}
-          disabled={!saveActive}
-          onPress={saveSkillsToDB}
-        >
-          <Text style={{ color: "#fff", fontWeight: "700" }}>Save</Text>
         </TouchableOpacity>
       </View>)}
 

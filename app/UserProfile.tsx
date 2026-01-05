@@ -23,6 +23,7 @@ export default function UserProfile() {
   const colorScheme = useColorScheme();
 
   const { userId } = useLocalSearchParams<{ userId?: string }>();
+  const [user, setUser] = useState<any>({});
 
   // 🎨 Color palette
   const textColor = DarkMode ? "#fff" : "#000";
@@ -68,12 +69,20 @@ export default function UserProfile() {
     }, [session])
   );
 
+  useEffect(() => {
+    const currentUser = usersData?.find((users: any) =>
+      users?.id === userId
+    );
+
+    setUser(currentUser);
+  }, [userId, usersData]);
+
   async function fetchCachedUserSkills() {
-    if (!userId) return;
+    if (!user) return;
 
-      const offered = user.skillsOffered;
+      const offered = user.skillsOffered || [];
 
-      const required = user.skillsRequired;
+      const required = user.skillsRequired || [];
 
       setOfferedSkills(offered);
       setRequiredSkills(required);
@@ -81,8 +90,8 @@ export default function UserProfile() {
   }
 
   useEffect(()=>{
-    fetchCachedUserSkills
-  },[userId])
+    fetchCachedUserSkills()
+  },[user])
 
   // ---------------------------
   // Fetch user's profile skills (join to skills table to get name & type)
@@ -136,10 +145,6 @@ export default function UserProfile() {
       const backHandler = BackHandler.addEventListener('hardwareBackPress', backAction);
       return () => backHandler.remove();
     }, [])
-  );
-
-  const user = usersData?.find((users: any) =>
-    users?.id === userId
   );
 
   const safeRating = Math.max(0, Math.min(5, Number(user?.rating) || 0));
@@ -358,14 +363,15 @@ export default function UserProfile() {
       </Modal>
 
       <Modal visible={reportVisible} transparent animationType="fade">
-        <View style={{
+        <Pressable  onPress={() => { setReportVisible(false); setReportTopic(null); setReportMessage(null); }}
+        style={{
             flex: 1,
             backgroundColor: "rgba(0,0,0,0.9)",
             justifyContent: "center",
             alignItems: "center",
         }}>
           
-        <FontAwesome name="close" size={32} style={{position: 'absolute', top: height * 0.1, right: width * 0.1, color: textColor, marginBottom: 4}} onPress={() => { setReportVisible(false); setReportTopic(null); setReportMessage(null); }}/>
+        {/* <FontAwesome name="close" size={32} style={{position: 'absolute', top: height * 0.1, right: width * 0.1, color: buttonTextColor, marginBottom: 4}} onPress={() => { setReportVisible(false); setReportTopic(null); setReportMessage(null); }}/> */}
 
         <TextInput
           style={[styles.input, { backgroundColor: inputColor }]}
@@ -381,16 +387,23 @@ export default function UserProfile() {
           onChangeText={setReportMessage}
         />
 
-        <TouchableOpacity style={[styles.button, {backgroundColor: redButton}]} onPress={reportUser}>
+        <TouchableOpacity style={[styles.redButton, {backgroundColor: redButton}]} onPress={reportUser}>
           <Text style={[styles.buttonText, {color: buttonTextColor}]}>Report</Text>
           {/* <FontAwesome name="send" size={20} color={buttonTextColor} /> */}
         </TouchableOpacity>
 
-        </View>
+        </Pressable>
       </Modal>
 
       <View style={{width: '100%', flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center'}}>
-       <View style={{ flexDirection: "row", alignItems: "center", alignSelf: "flex-start", marginVertical: 5, marginLeft: width * 0.25}}>
+        <TouchableOpacity 
+        style={{ flexDirection: "row", alignItems: "center", alignSelf: "flex-start", marginVertical: 5, marginLeft: width * 0.25}}
+        onPress={() => router.push({
+          pathname: '/Reviews',
+          params: {
+            userId: userId
+          }
+        })}>
           {/* Full Stars */}
           {[...Array(fullStars)].map((_, i) => (
                <FontAwesome key={`full-${i}`} name="star" size={14} color="gold" />
@@ -408,11 +421,11 @@ export default function UserProfile() {
             ({user?.reviews})
           </Text>
 
-        </View>
+        </TouchableOpacity>
         <View style={{width: '40%',flexDirection: 'column',  justifyContent: 'center', alignItems: 'flex-end', marginTop: height * 0.01, gap:10, paddingRight: width * 0.02}}>
-          <TouchableOpacity style={[styles.shortButton, {flexDirection: 'row',backgroundColor: buttonColor}]} onPress={MessageUser}>
-            {/* <FontAwesome name="comment" size={14} color={buttonTextColor} /> */}
-            <Text style={[styles.buttonText, {color: buttonTextColor}]}>Chat</Text>
+          <TouchableOpacity style={[styles.button, {flexDirection: 'row',backgroundColor: buttonColor}]} onPress={MessageUser}>
+            <FontAwesome name="comment" size={width * 0.04} color={buttonTextColor} />
+            <Text style={[styles.buttonText, {color: buttonTextColor}]}>   Chat</Text>
           </TouchableOpacity>
         </View>
       </View>
@@ -431,12 +444,19 @@ export default function UserProfile() {
         
           <TouchableOpacity
             style={[styles.button, {flexDirection: 'row', backgroundColor: buttonColor}]}
-            onPress={showDatePicker}
+            // onPress={showDatePicker}
+            onPress={() =>
+              Alert.alert(
+                'Meeting Request', 
+                'Select date & time to request a meeting.',  
+                [
+                  { text: "Cancel" },
+                  { text: "Select Date & Time", onPress: showDatePicker }
+                ]
+              )}
           >
-            {/* <FontAwesome name="calendar" size={20} color={buttonTextColor} /> */}
-            <Text style={[styles.buttonText, {color: buttonTextColor}]}>
-              Schedule Meeting
-            </Text>
+            <FontAwesome name="video-camera" size={width * 0.04} color={buttonTextColor} />
+            <Text style={[styles.buttonText, {color: buttonTextColor}]}>  Meet</Text>
           </TouchableOpacity>
         </View>
       </View>
@@ -534,6 +554,17 @@ export default function UserProfile() {
             display='spinner'
             date={selectedDate || new Date()}
             onConfirm={(date) => {
+              const now = new Date();
+              // ❌ Prevent past time if today is selected
+              if (now.getTime() > date.getTime()) {
+                Alert.alert(
+                  "Invalid Time",
+                  "You cannot select a past time."
+                );
+                hideDatePicker();
+                return;
+              }
+
               setSelectedDate(date);
               setShowPicker(false);
               setTimeout(() => {
@@ -549,8 +580,15 @@ export default function UserProfile() {
             }}
             onCancel={hideDatePicker}
             minimumDate={new Date()}
+            minuteInterval={15}
             themeVariant={DarkMode ? "dark" : "light"}
           />
+          {/* <TextInput
+            style={[styles.input, { backgroundColor: inputColor, width: '80%' }]}
+            placeholder={`${new Date()?.toLocaleDateString()} ${new Date().toLocaleTimeString()}`}
+            value={message}
+            onChangeText={setMessage}
+          /> */}
         </View>
 
          {/* Menu Modal */}
@@ -662,10 +700,10 @@ const styles = StyleSheet.create({
     borderColor: "#007BFF",
   },
 
-  addButton: {
-    // width: "30%",
+  redButton: {
+    width: "30%",
     marginTop: 10,
-    paddingVertical: 12,
+    paddingVertical: 10,
     alignItems: "center",
     borderRadius: 6,
     marginBottom: 10,
@@ -689,7 +727,7 @@ const styles = StyleSheet.create({
     // margin: 10,
   },
   button: {
-    width: width * 0.3,
+    maxWidth: width * 0.3,
     padding: width * 0.02,
     borderRadius: 20,
     alignItems: 'center',
@@ -697,15 +735,15 @@ const styles = StyleSheet.create({
     // margin: 10,
   },
    shortButton: {
-    width: width * 0.125,
-    padding: width * 0.02,
+    maxWidth: width * 0.15,
+    padding: width * 0.025,
     borderRadius: 20,
     alignItems: 'center',
     justifyContent: 'center',
     // margin: 10,
   },
   buttonText: {
-    fontSize: 14,
+    fontSize: width * 0.03,
     fontWeight: 'bold',
   },
 

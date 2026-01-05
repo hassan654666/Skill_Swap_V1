@@ -1,13 +1,17 @@
+/* https://saxuhvcppykdazdfosae.supabase.co/auth/v1/verify?token=c5b230233e807129863533c0b1468974a5f252c5d46334209e62f2ca&type=recovery&redirect_to=skillswap://ResetPassword */
 import { useState, useEffect, useCallback } from 'react';
 import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert, Image, useColorScheme, BackHandler, ActivityIndicator } from 'react-native';
 import { useFocusEffect, useRouter } from 'expo-router';
 import * as Linking from 'expo-linking';
 import { supabase } from '@/lib/supabase';
 import { useUserContext } from '@/components/UserContext';
+import { Ionicons } from '@expo/vector-icons';
 
 export default function ResetPassword() {
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [userEmail, setUserEmail] = useState('');
   const [loading, setLoading] = useState(true);
   const [localUserData, setLocalUserData] = useState<any>(null);
@@ -26,8 +30,8 @@ export default function ResetPassword() {
   const redButton = DarkMode ? "#dc3545" : "#ff0000ff"
   const linkTextColor = DarkMode ? "#007bffff" : "#0040ffff";
   const buttonTextColor = "#fff";
-  
-  const restoreSessionFromDeepLink = useCallback(async (url?: any) => {
+
+  const restoreSessionFromDeepLink = useCallback(async (url?: string | null) => {
     try {
       if (!url) {
         url = await Linking.getInitialURL();
@@ -65,13 +69,13 @@ export default function ResetPassword() {
 
           console.log('Session restored from deep link');
           setUserEmail(data.session?.user?.email || '');
+          setLoading(false);
+          return;
         } else {
           console.warn('No tokens found in deep link.');
-          Alert.alert('No tokens found in deep link.');
         }
       } else {
         console.log('No token hash in deep link.');
-        Alert.alert('No token hash in deep link.');
       }
     } catch (err) {
       console.error('Error restoring session:', err);
@@ -178,21 +182,45 @@ export default function ResetPassword() {
         {/* <Text style={[styles.userName, { color: textColor }]}>Email: {userEmail}</Text> */}
       </View>
 
-      <TextInput
-        style={[styles.input, { backgroundColor: inputColor }]}
-        placeholder="Enter new Password"
-        value={newPassword}
-        onChangeText={setNewPassword}
-        secureTextEntry
-      />
+      <View style={{ width: '100%', alignItems: 'center', position: 'relative' }}>
+        <TextInput
+          style={[styles.input, { backgroundColor: inputColor }]}
+          placeholder="Enter new Password"
+          value={newPassword}
+          onChangeText={setNewPassword}
+          secureTextEntry={!showPassword}
+        />
+        <TouchableOpacity
+          style={styles.eyeButton}
+          onPress={() => setShowPassword(!showPassword)}
+        >
+          <Ionicons
+            name={showPassword ? 'eye' : 'eye-off'}
+            size={24}
+            color="#414141ff"
+          />
+        </TouchableOpacity>
+      </View>
 
-      <TextInput
-        style={[styles.input, { backgroundColor: inputColor }]}
-        placeholder="Confirm Password"
-        value={confirmPassword}
-        onChangeText={setConfirmPassword}
-        secureTextEntry
-      />
+      <View style={{ width: '100%', alignItems: 'center', position: 'relative' }}>
+        <TextInput
+          style={[styles.input, { backgroundColor: inputColor }]}
+          placeholder="Confirm Password"
+          value={confirmPassword}
+          onChangeText={setConfirmPassword}
+          secureTextEntry={!showConfirmPassword}
+        />
+        <TouchableOpacity
+          style={styles.eyeButton}
+          onPress={() => setShowConfirmPassword(!showConfirmPassword)}
+        >
+          <Ionicons
+            name={showConfirmPassword ? 'eye' : 'eye-off'}
+            size={24}
+            color="#414141ff"
+          />
+        </TouchableOpacity>
+      </View>
 
       <TouchableOpacity style={[styles.button, { backgroundColor: buttonColor }]} onPress={changePassword}>
         <Text style={[styles.buttonText, { color: buttonTextColor }]}>Save</Text>
@@ -212,7 +240,22 @@ const styles = StyleSheet.create({
   content: { flex: 0.5, justifyContent: 'center', alignItems: 'center', padding: 40 },
   name: { fontSize: 24, fontWeight: 'bold', textAlign: 'center', padding: 5 },
   userName: { fontSize: 14, fontWeight: 'bold', textAlign: 'center', padding: 5 },
-  input: { width: '80%', padding: 10, borderWidth: 1, borderColor: '#ccc', borderRadius: 8, marginBottom: 20 },
+  // input: { width: '80%', padding: 10, borderWidth: 1, borderColor: '#ccc', borderRadius: 8, marginBottom: 20 },
+   input: { 
+    width: '80%', 
+    height: 40,
+    padding: 10, 
+    paddingRight: 50,
+    borderWidth: 1, 
+    borderColor: '#ccc', 
+    borderRadius: 10, 
+    marginBottom: 20 
+  },
   button: { width: '25%', padding: 10, borderRadius: 8, alignItems: 'center', margin: 5 },
   buttonText: { fontWeight: 'bold' },
+  eyeButton: {
+    position: 'absolute',
+    right: 50,
+    top: 10,
+  },
 });

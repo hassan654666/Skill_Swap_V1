@@ -583,8 +583,20 @@ const uniqueTypes = ['Calendar', 'Upcoming']; // or any dynamic tags
         mode="datetime"
         date={newDateTime}
         minimumDate={new Date()}
+        minuteInterval={15}
         display="spinner"
         onConfirm={(date) => {
+          const now = new Date();
+          // ❌ Prevent past time if today is selected
+          if (now.getTime() > date.getTime()) {
+            Alert.alert(
+              "Invalid Time",
+              "You cannot select a past time."
+            );
+            setRescheduleModal(false);
+            return;
+          }
+
           setNewDateTime(date);
           setRescheduleModal(false);
           setTimeout(() => {
@@ -602,14 +614,26 @@ const uniqueTypes = ['Calendar', 'Upcoming']; // or any dynamic tags
         themeVariant={DarkMode ? "dark" : "light"}
       />
 
-      {/* 🕒 Reschedule Date & Time Picker */}
+      {/* 🕒 Schedule Date & Time Picker */}
       <DateTimePickerModal
         isVisible={showPicker}
         mode="datetime"
         date={newDateTime}
         minimumDate={new Date()}
+        minuteInterval={15}
         display="spinner"
         onConfirm={(date) => {
+          const now = new Date();
+          // ❌ Prevent past time if today is selected
+          if (now.getTime() > date.getTime()) {
+            Alert.alert(
+              "Invalid Time",
+              "You cannot select a past time."
+            );
+            setShowPicker(false);
+            return;
+          }
+
           setNewDateTime(date);
           setShowPicker(false);
           setTimeout(() => {

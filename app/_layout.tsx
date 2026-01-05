@@ -119,6 +119,8 @@ function RootLayoutNav() {
 
             <Stack.Screen name='Meeting' options={{ headerShown: false }} />
             <Stack.Screen name='ReviewUser' options={{ headerShown: false }} />
+            <Stack.Screen name='Reviews' options={{ headerShown: false }} />
+            
             <Stack.Screen name='callback' options={{ headerShown: false }} />
             <Stack.Screen name='CompleteProfile' options={{ headerShown: false }} />
             <Stack.Screen name='UploadCourse' options={{ headerShown: false }} />
