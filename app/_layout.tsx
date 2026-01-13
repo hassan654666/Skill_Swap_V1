@@ -125,6 +125,7 @@ function RootLayoutNav() {
             <Stack.Screen name='CompleteProfile' options={{ headerShown: false }} />
             <Stack.Screen name='UploadCourse' options={{ headerShown: false }} />
             <Stack.Screen name='OpenCourse' options={{ headerShown: false }} />
+            <Stack.Screen name='Revenue' options={{ headerShown: false }} />
             <Stack.Screen name='Banned' options={{ headerShown: false }} />
             
           </Stack>

@@ -9,7 +9,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 const { width, height } = Dimensions.get("window");
 
 export default function Notifications() {
-  const { userData, DarkMode, session } = useUserContext();
+  const { userData, DarkMode, session, setNewNotifCount } = useUserContext();
   const navigation = useNavigation<any>();
   const router = useRouter();
   const colorScheme = useColorScheme();
@@ -63,6 +63,23 @@ export default function Notifications() {
       await AsyncStorage.setItem(CACHE_KEY, JSON.stringify(data));
     }
   };
+
+  const markAsOpened = async () => {
+    const { data, error } = await supabase
+      .from("notifications")
+      .update({ opened: true })
+      .eq("user_id", userData?.id);
+    if (error) {
+      console.error("Error marking notification as opened:", error);
+    }
+    setNewNotifCount(0);
+  };
+
+  useFocusEffect(
+    useCallback(() => {
+      markAsOpened();
+    }, [])
+  );
 
   useEffect(() => {
     fetchNotifications();

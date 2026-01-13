@@ -174,7 +174,7 @@ export default function Courses({searchText}:{searchText: string}) {
             marginTop: 8,
           }}
         >
-          Price: ${course.price}
+          Price: PKR {course.price}
         </Text>
 
         {/* STATUS */}

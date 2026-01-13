@@ -10,6 +10,9 @@ export default function AdminLayout() {
       <Stack.Screen name="ManageCourse" options={{ title: "Manage Course", headerShown: false }} />
       <Stack.Screen name="Course" options={{ title: "Courses", headerShown: false }} />
       <Stack.Screen name="Reports" options={{ title: "Reports", headerShown: false }} />
+      <Stack.Screen name="Revenue" options={{ title: "Revenue", headerShown: false }} />
+      <Stack.Screen name="UserRevenue" options={{ title: "User Revenue", headerShown: false }} />
+      <Stack.Screen name="WithdrawalRequests" options={{ title: "Withdrawal Requests", headerShown: false }} />
     </Stack>
   );
 }

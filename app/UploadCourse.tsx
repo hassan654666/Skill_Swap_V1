@@ -311,7 +311,7 @@ export default function UploadCourse() {
             value={price}
             onChangeText={setPrice}
           />
-          <Text style={{ marginLeft: 12, color: DarkMode ? "#AAA" : "#333" }}>USD (optional)</Text>
+          <Text style={{ marginLeft: 12, color: DarkMode ? "#AAA" : "#333" }}>PKR</Text>
         </View>
 
         {/* Thumbnail */}

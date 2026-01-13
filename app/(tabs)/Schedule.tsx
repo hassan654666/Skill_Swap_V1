@@ -45,6 +45,10 @@ export default function Schedule() {
   
   const CACHE_KEY = `user_schedule${userData.id}`;
 
+  const todayStr = toCalendarDateString(new Date());
+
+  const isPastDate = selectedDate ? selectedDate < todayStr : false;
+
   useEffect(() => {
     const loadCachedSchedule = async () => {
       try {
@@ -540,7 +544,7 @@ const uniqueTypes = ['Calendar', 'Upcoming']; // or any dynamic tags
         {selectedDate ? `Meetings on ${toDisplayDate(selectedDate)}` : 'Select a date'}
       </Text>
 
-      {showList ? (<FlatList
+      {(showList && !isPastDate)? (<FlatList
         style={{padding: width * 0.03}}
         data={usersData}
         keyExtractor={(item) => item.id.toString()}
@@ -568,14 +572,16 @@ const uniqueTypes = ['Calendar', 'Upcoming']; // or any dynamic tags
       />)}
       </View>
       )}
-      <View style={{ flexDirection: 'row', margin: 20, justifyContent: 'space-around' }}>
+      {( selectedTag === 'Upcoming' || 
+      (selectedTag === 'Calendar' && !isPastDate) 
+      ) && (<View style={{ flexDirection: 'row', margin: 20, justifyContent: 'space-around' }}>
           <TouchableOpacity
           style={[styles.button, { backgroundColor: buttonColor }]}
           onPress={() => setShowList(!showList)}
         >
           {showList ? (<Text style={{ color: buttonTextColor }}>Cancel</Text>) : (<Text style={{ color: buttonTextColor }}>Request a new meeting</Text>)}
         </TouchableOpacity>
-      </View>
+      </View>)}
 
       {/* 🕒 Reschedule Date & Time Picker */}
       <DateTimePickerModal

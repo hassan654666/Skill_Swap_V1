@@ -18,7 +18,7 @@ import ResetPassword from "../ResetPassword";
 
 export default function TabLayout() {
   console.log("tabs layout rendered");
-  const { userData, unreadCount, isRecovery } = useUserContext();
+  const { userData, unreadCount, isRecovery, newNotifCount } = useUserContext();
   const pathname = usePathname();
 
   const [isFirstLaunch, setIsFirstLaunch] = useState<boolean | null>(null);
@@ -183,7 +183,35 @@ export default function TabLayout() {
         options={{
           title: "Notifications",
           tabBarIcon: ({ color, size }) => (
-            <FontAwesome name="bell" size={size} color={color} />
+            <View>
+              <FontAwesome name="bell" size={size} color={color} />
+              {newNotifCount > 0 && pathname !== "/Notifications" && (
+                <View
+                  style={{
+                    position: "absolute",
+                    right: -6,
+                    top: -3,
+                    backgroundColor: "red",
+                    borderRadius: 12,
+                    minWidth: 20,
+                    height: 20,
+                    justifyContent: "center",
+                    alignItems: "center",
+                    paddingHorizontal: 4,
+                  }}
+                >
+                  <Text
+                    style={{
+                      color: "white",
+                      fontSize: 11,
+                      fontWeight: "bold",
+                    }}
+                  >
+                    {newNotifCount > 99 ? "99+" : newNotifCount}
+                  </Text>
+                </View>
+              )}
+            </View>
           ),
         }}
       />

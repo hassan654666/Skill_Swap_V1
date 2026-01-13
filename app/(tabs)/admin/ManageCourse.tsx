@@ -217,7 +217,7 @@ export default function ManageCourse() {
 
         {/* Price */}
         <Text style={{ fontSize: 20, fontWeight: "600", marginBottom: 16, color: textColor }}>
-          Price: {course.price > 0 ? `$${course.price}` : "Free"}
+          Price: {course.price > 0 ? `PKR ${course.price}` : "Free"}
         </Text>
 
         {/* STATUS */}

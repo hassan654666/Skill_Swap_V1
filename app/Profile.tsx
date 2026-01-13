@@ -433,40 +433,52 @@ export default function Profile() {
         </Pressable>
       </Modal>
 
-      <View style={{width: "100%", alignItems: "center", marginTop: 30}}>
+      <View style={{width: "100%", alignItems: "center",}}>
         <View style={styles.userInfo}>
+          
           <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: "center"}}>
-            <Text style={[styles.title, { color: textColor }]}>{userData?.name}</Text>
-            <TouchableOpacity 
-              style={{ flexDirection: "row", alignItems: "center" }}
-              onPress={() => router.push({
-              pathname: '/Reviews',
-              params: {
-                userId: userData?.id || ''
-              }
-            })}>
-              {/* Full Stars */}
-              {[...Array(fullStars)].map((_, i) => (
-                <FontAwesome key={`full-${i}`} name="star" size={20} color="gold" />
-              ))}
+            <View style={{ flexDirection: 'column', maxWidth: '55%'}}>
+            <Text style={[styles.title, { color: textColor, marginTop: height * 0.025 }]}>{userData?.name}</Text>
+            <Text style={[styles.title, { color: textColor, opacity: 0.6}]}>@{userData?.username}</Text>
+            </View>
+            <View style={{ width: '40%', flexDirection: "column", alignItems: "flex-end", justifyContent: 'flex-end', alignSelf: 'flex-end', gap:10,}}>
+              <View style={{width: '100%',flexDirection: 'column',  justifyContent: 'flex-end', alignSelf: 'flex-end', alignItems: 'flex-end', marginTop: height * 0.01, gap:10, paddingRight: width * 0.02}}>
+                <TouchableOpacity style={[styles.button, {flexDirection: 'row',backgroundColor: buttonColor}]} onPress={() => router.push('/Revenue')}>
+                  <FontAwesome name="dollar" size={width * 0.04} color={buttonTextColor} />
+                  <Text style={[styles.buttonText, {color: buttonTextColor}]}>   Earnings</Text>
+                </TouchableOpacity>
+              </View>
+              <TouchableOpacity 
+                style={{ flexDirection: "row", alignItems: "center",  paddingRight: width * 0.02 }}
+                onPress={() => router.push({
+                pathname: '/Reviews',
+                params: {
+                  userId: userData?.id || ''
+                }
+              })}>
+                {/* Full Stars */}
+                {[...Array(fullStars)].map((_, i) => (
+                  <FontAwesome key={`full-${i}`} name="star" size={20} color="gold" />
+                ))}
 
-              {/* Half Star */}
-              {halfStar && <FontAwesome name="star-half-full" size={20} color="gold" />}
+                {/* Half Star */}
+                {halfStar && <FontAwesome name="star-half-full" size={20} color="gold" />}
 
-              {/* Empty Stars */}
-              {[...Array(emptyStars)].map((_, i) => (
-                <FontAwesome key={`empty-${i}`} name="star-o" size={20} color="grey" />
-              ))}
+                {/* Empty Stars */}
+                {[...Array(emptyStars)].map((_, i) => (
+                  <FontAwesome key={`empty-${i}`} name="star-o" size={20} color="grey" />
+                ))}
 
-              <Text style={{ marginLeft: 5, fontSize: 16, color: textColor }}>
-                ({userData?.reviews})
-              </Text>
-            </TouchableOpacity>
+                <Text style={{ marginLeft: 5, fontSize: 16, color: textColor }}>
+                  ({userData?.reviews})
+                </Text>
+              </TouchableOpacity>
+            </View>
           </View>
             
-            <Text style={[styles.title, { color: textColor, opacity: 0.6, marginBottom: 14 }]}>@{userData?.username}</Text>
+            {/* <Text style={[styles.title, { width: '60%', color: textColor, opacity: 0.6, marginBottom: 14 }]}>@{userData?.username}</Text> */}
 
-            <Text style={[styles.title, { color: textColor }]}>{userData?.description}</Text>
+            <Text style={[styles.title, { color: textColor, marginTop: 10 }]}>{userData?.description}</Text>
         </View>
       </View>
 
@@ -566,7 +578,7 @@ export default function Profile() {
         </View>
       )}
 
-      {/* Save button (enabled only when we have unsaved additions) */}
+       {/* Save button (enabled only when we have unsaved additions) */}
       {saveActive && (<View style={{ width: "100%", alignItems: "center"}}>
         <TouchableOpacity
           style={[
@@ -670,7 +682,8 @@ const styles = StyleSheet.create({
   },
   userInfo: { 
     // paddingBottom: 10,
-    width: '90%', 
+    width: '100%', 
+    paddingLeft: width * 0.04,
   },
   title: { 
     fontSize: 16, 
@@ -723,6 +736,27 @@ const styles = StyleSheet.create({
     borderRadius: 6,
     alignItems: "center",
     marginBottom: 10
+  },
+
+   button: {
+    maxWidth: width * 0.3,
+    padding: width * 0.02,
+    borderRadius: 20,
+    alignItems: 'center',
+    justifyContent: 'center',
+    // margin: 10,
+  },
+   shortButton: {
+    maxWidth: width * 0.15,
+    padding: width * 0.025,
+    borderRadius: 20,
+    alignItems: 'center',
+    justifyContent: 'center',
+    // margin: 10,
+  },
+  buttonText: {
+    fontSize: width * 0.03,
+    fontWeight: 'bold',
   },
 
 });

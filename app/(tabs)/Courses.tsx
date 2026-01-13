@@ -244,7 +244,7 @@ export default function Courses() {
           }}
         >
           <Text style={{ fontWeight: "700", color: textColor }}>
-            ${item.price ?? 0}
+            PKR {item.price ?? 0}
           </Text>
 
           {item.owner_id === userData.id && (

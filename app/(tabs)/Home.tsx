@@ -108,7 +108,7 @@ export default function Home() {
       }
 
       // Merge skills into profiles
-      const finalUsers = usersData.map((user) => {
+      const finalUsers = usersData?.map((user) => {
         const offered = profileSkills
           .filter(ps => ps.profile_id === user.id && ps.category === "offered")
           .map(ps => ps.skills);
@@ -136,10 +136,10 @@ export default function Home() {
     fetchAllData();
   }, []);
 
-  const uniqueTags : any[] = Array.from(new Set(skills.map((s: any) => s.type)));
+  const uniqueTags : any[] = Array.from(new Set(skills?.map((s: any) => s.type)));
 
-  const searchData = usersData.filter((user: any) => {
-    const text = searchText.trim().toLowerCase();
+  const searchData = usersData?.filter((user: any) => {
+    const text = searchText?.trim().toLowerCase();
 
     // Basic text search
     const matchesText =
@@ -150,7 +150,7 @@ export default function Home() {
     // Tag filter
     const matchesTag =
       !selectedTag ||
-      user.skillsOffered.some((s: any) => s?.type === selectedTag);
+      user.skillsOffered?.some((s: any) => s?.type === selectedTag);
 
     return matchesText && matchesTag;
   });

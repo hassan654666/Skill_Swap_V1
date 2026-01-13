@@ -19,9 +19,11 @@ interface UserContextType {
   userData: any;
   loading: boolean;
   unreadCount: number;
+  newNotifCount: number;
   recording: Audio.Recording | null;
   setRecording: (recording: Audio.Recording | null) => void;
   setUnreadCount: (count: number) => void;
+  setNewNotifCount: (count: number) => void;
   DarkMode: boolean;
   setIsDark: (isDark: boolean) => void;
   isRecovery: any;
@@ -58,6 +60,7 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const usersDataRef = useRef<any[]>([]);
   const userDataRef = useRef<any>(null);
   const [unreadCount, setUnreadCount] = useState<number>(0);
+  const [newNotifCount, setNewNotifCount] = useState<number>(0);
   const [updateFlag, setUpdateFlag] = useState(false); // State to trigger re-renders
   const [loading, setLoading] = useState(true);
   const [userId, setUserId] = useState<any>();
@@ -443,8 +446,29 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
     AsyncStorage.setItem('darkMode', value ? 'true' : 'false');
   }, []);
 
+  // 🔹 Fetch unread notification count (opened = false)
+  const fetchNewNotifCounts = useCallback(async () => {
+    if (!userId) return;
+
+    const { count, error } = await supabase
+      .from("notifications")
+      .select("*", { count: "exact", head: true })
+      .eq("user_id", userId)
+      .eq("opened", false);
+
+    if (error) {
+      console.error("Unread notif count error:", error);
+      return;
+    }
+
+    setNewNotifCount(count ?? 0);
+  }, [userId]);
+
   useEffect(() => {
     if(!userId) return;
+
+    fetchNewNotifCounts();
+    fetchSessionAndUserData();
 
     const profilesChannel = supabase
       .channel("profiles-update")
@@ -458,6 +482,42 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
         () => {
           // Re-fetch all counts whenever something changes
           fetchSessionAndUserData();
+        }
+      )
+      .on(
+        "postgres_changes",
+        {
+          event: "*", // insert/update/delete
+          schema: "public",
+          table: "purchases",
+        },
+        () => {
+          // Re-fetch all counts whenever something changes
+          fetchSessionAndUserData();
+        }
+      )
+      .on(
+        "postgres_changes",
+        {
+          event: "*", // insert/update/delete
+          schema: "public",
+          table: "courses",
+        },
+        () => {
+          // Re-fetch all counts whenever something changes
+          fetchSessionAndUserData();
+        }
+      )
+      .on(
+        "postgres_changes",
+        {
+          event: "*", // insert/update/delete
+          schema: "public",
+          table: "nootifications",
+        },
+        () => {
+          // Re-fetch all counts whenever something changes
+          fetchNewNotifCounts();
         }
       )
       .subscribe();
@@ -474,10 +534,12 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
       usersData: usersDataRef.current,
       userData: userDataRef.current,
       unreadCount, 
+      newNotifCount,
       recording,
       setRecording,
       loading,
       setUnreadCount,
+      setNewNotifCount,
       DarkMode,
       isRecovery,
       setIsRecovery,

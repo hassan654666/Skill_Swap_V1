@@ -20,12 +20,13 @@ import { FontAwesome } from "@expo/vector-icons";
 import { supabase } from "../lib/supabase";
 import { useUserContext } from "@/components/UserContext";
 import { Video, ResizeMode } from "expo-av";
+import Constants from "expo-constants";
 
 const { width, height } = Dimensions.get("window");
 
 export default function OpenCourse() {
   const { courseId } = useLocalSearchParams();
-  const { userData, DarkMode, courses, allUsers, purchases } = useUserContext();
+  const { userData, DarkMode, courses, allUsers, purchases, setPurchases } = useUserContext();
 
   const [course, setCourse] = useState<any>(null);
   const [loading, setLoading] = useState(true);
@@ -35,19 +36,31 @@ export default function OpenCourse() {
   const [fileUrl, setFileUrl] = useState<string>('');
   const [docViewerVisible, setDocViewerVisible] = useState(false);
 
+  // JazzCash
+  const [paymentPayload, setPaymentPayload] = useState<any>(null);
+  const [paymentModalVisible, setPaymentModalVisible] = useState(false);
+  const [html, setHtml] = useState<string>("");
+
   const [mediaPreviewVisible, setMediaPreviewVisible] = useState(false);
   const [mediaPreviewUri, setMediaPreviewUri] = useState<string | null>(null);
   const [mediaPreviewType, setMediaPreviewType] = useState<"image" | "video" | null>(null);
+
+  const { supabaseUrl, supabaseAnonKey, sdkKey } = Constants.expoConfig?.extra || {}; 
   
   const router = useRouter();
 
-  const textColor = DarkMode ? "#fff" : "#000";
-  const backgroundColor = DarkMode ? "#1e1e1e" : "#ddddddff";
-  const SecondaryBackgroundColor = DarkMode ? "#2e2e2e" : "#bdbdbdff";
-  const TertiaryBackgroundColor = DarkMode ? "#484848ff" : "#ffffffff";
-  const inputColor = DarkMode ? "#6c6c6cff" : "#EAEAEA";
-  const buttonColor = DarkMode ? "#004187ff" : "#007BFF";
-  const buttonTextColor = "#fff";
+  // 🎨 Color palette
+    const textColor = DarkMode ? "#fff" : "#000";
+    const backgroundColor = DarkMode ? "#1e1e1e" : "#ddddddff";
+    const SecondaryBackgroundColor = DarkMode ? "#2e2e2e" : "#bdbdbdff";
+    const TertiaryBackgroundColor = DarkMode ? "#484848ff" : "#ffffffff";
+    const inputColor = DarkMode ? "#6c6c6cff" : "#EAEAEA";
+    const buttonColor = DarkMode ? "#004187ff" : "#007BFF";
+    const redButton = DarkMode ? "#dc3545" : "#ff0000ff"
+    const linkTextColor = DarkMode ? "#007bffff" : "#0040ffff";
+    const buttonTextColor = "#fff";
+    const bubbleOneColor = DarkMode ? '#183B4E' : '#3D90D7';
+    const bubbleTwoColor = DarkMode ? '#015551' : '#1DCD9F';
 
   function fectchAsyncCourse() {
     const openedCourse = courses.find((course: any) => (course?.id === courseId));
@@ -125,48 +138,74 @@ export default function OpenCourse() {
     checkPurchase();
   }, [courseId]);
 
-  // Mock payment
-  const handlePurchase = async () => {
-    Alert.alert(
-      "Mock Payment",
-      `Pay Rs. ${course.price}?`,
-      [
-        {
-          text: "Cancel",
-          style: "cancel",
-        },
-        {
-          text: "Pay Now",
-          onPress: async () => {
-            setProcessing(true);
-            await savePurchase();
-            setProcessing(false);
-          },
-        },
-      ]
-    );
+   const fetchPurchases = async () => {
+    const { data, error } = await supabase
+      .from("purchases")
+      .select("*")
+    if (!error) {
+      setPurchases(data);
+    }
   };
 
-  // Save in purchases table
-  const savePurchase = async () => {
-    if (!userData?.id) return;
-
-    const { error } = await supabase.from("purchases").insert([
-      {
-        user_id: userData.id,
-        course_id: courseId,
-        ammount: course.price,
-        status: 'bought'
-      },
-    ]);
-
-    if (error) {
-      Alert.alert("Error", "Failed to save purchase.");
-      return;
+  // JazzCash payment
+   const handlePurchase = async () => {
+  const res =  await fetch("https://saxuhvcppykdazdfosae.supabase.co/functions/v1/create-jazzcash-payment", {
+        method: "POST",
+        headers: { 
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${supabaseAnonKey}`,
+          apikey: supabaseAnonKey,
+          },
+      body: JSON.stringify({ amount: course?.price, userId: userData?.id, courseId: courseId }) // Rs 500
     }
+  );
 
-    setPurchased(true);
-    Alert.alert("Success", "You now own this course!");
+  const data = await res.json();
+  console.log("JazzCash Payment Payload:", data);
+  setPaymentPayload(data);
+  setPaymentModalVisible(true);
+
+  const { actionUrl, fields } = data;
+
+  const html = `
+  <!DOCTYPE html>
+  <html>
+    <body onload="document.forms[0].submit()">
+      <form method="POST" action="${actionUrl}">
+        ${Object.entries(fields)
+          .map(
+            ([key, value]) =>
+              `<input type="hidden" name="${key}" value="${value}" />`
+          )
+          .join("")}
+      </form>
+    </body>
+  </html>
+  `;
+
+  setHtml(html);
+
+};
+
+const handleMessage = (event: any) => {
+    try {
+      const data = JSON.parse(event.nativeEvent.data);
+      
+      // Show alert depending on status
+      if (data.status === "success") {
+        Alert.alert("Payment Successful", `Transaction ID: ${data.txn}`, [
+          { text: "OK", onPress: () => {setPaymentModalVisible(false); fetchPurchases;} } // Close modal after user presses OK
+        ]);
+      } else {
+        Alert.alert("Payment Failed", "Transaction failed or invalid", [
+          { text: "OK", onPress: () => setPaymentModalVisible(false) }
+        ]);
+      }
+    } catch (e) {
+      Alert.alert("Payment Error", "Unexpected error occurred", [
+        { text: "OK", onPress: () => setPaymentModalVisible(false) }
+      ]);
+    }
   };
 
   const getFileTypeFromUrl = (url: string) => {
@@ -253,7 +292,7 @@ export default function OpenCourse() {
 
         {/* Price */}
         {(!purchased && course.price > 0) && (<Text style={{ fontSize: 20, fontWeight: "600", marginBottom: 16, color: textColor }}>
-          Price: {course.price > 0 ? `$${course.price}` : "Free"}
+          Price: {course.price > 0 ? `PKR ${course.price}` : "Free"}
         </Text>)}
 
         {/* Purchase button */}
@@ -407,6 +446,30 @@ export default function OpenCourse() {
             )}
           </View>
         </Modal>
+
+        {/* ---------------- JAZZCASH MODAL ---------------- */}
+      <Modal visible={paymentModalVisible} animationType="slide">
+        <SafeAreaView style={{ flex: 1 }}>
+          <TouchableOpacity
+            onPress={() => setPaymentModalVisible(false)}
+            style={{ height: height * 0.06, padding: 0, justifyContent: "center", backgroundColor: backgroundColor }}
+          >
+            <Text style={{ width: "20%", height: "75%", justifyContent: "center", textAlign: "center", paddingVertical: height * 0.01, fontSize: 16, fontWeight: "bold", borderRadius: 10, color: buttonTextColor, backgroundColor: redButton }}>Cancel</Text>
+          </TouchableOpacity>
+          {paymentPayload && (
+          <WebView
+            originWhitelist={["*"]}
+            javaScriptEnabled
+            domStorageEnabled
+            source={{ html }}
+            // onNavigationStateChange={handleNavigation}
+            onMessage={handleMessage} // capture postMessage
+            // onError={(e) => console.log("WebView error", e.nativeEvent)}
+            // onHttpError={(e) => console.log("HTTP error", e.nativeEvent)}
+          />
+          )}
+        </SafeAreaView>
+      </Modal>
 
         <Modal visible={docViewerVisible} animationType="slide">
         <SafeAreaView style={{ flex: 1 }}>

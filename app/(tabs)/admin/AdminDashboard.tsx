@@ -8,6 +8,7 @@ import { FontAwesome } from '@expo/vector-icons';
 import Users from './Users';
 import Courses from './Courses';
 import Reports from './Reports';
+import Revenue from './Revenue';
 //import { savePushToken } from '@/utils/savePushToken';
 //import { usePushToken } from '@/hooks/usePushToken';
 
@@ -19,7 +20,7 @@ export default function AdminDashboard() {
 
   const [searchText, setSearchText] = useState<string>('');
   const [showSearch, setShowSearch] = useState(false);
-  const [activeScreen, setActiveScreen] = useState<"users" | "courses" | "reports">("users");
+  const [activeScreen, setActiveScreen] = useState<"users" | "courses" | "reports" | "revenue">("users");
   const navigation = useNavigation<any>();
   const router = useRouter();
   const isFocused = useIsFocused();
@@ -38,6 +39,7 @@ export default function AdminDashboard() {
     users: "Users",
     courses: "Courses",
     reports: "Reports",
+    revenue: "Revenue",
   };
 
   // const searchData = usersData?.filter((users: any) =>
@@ -158,12 +160,19 @@ console.log("Admin: incoming searchText:", JSON.stringify(searchText));
             </View>
             <Text style={[styles.buttonText, {color: textColor}]}>Reports</Text>
           </TouchableOpacity>
+          <TouchableOpacity style ={styles.navButton} onPress={() => setActiveScreen('revenue')}>
+            <View style={{ position: "relative" }}>
+              <FontAwesome name="dollar" size={24} color={textColor} />
+            </View>
+            <Text style={[styles.buttonText, {color: textColor}]}>Revenue</Text>
+          </TouchableOpacity>
         </View>
         </View>
         <View style={[styles.content, {backgroundColor: backgroundColor}]}>
           {activeScreen === "users" && <Users searchText= {searchText} />}
           {activeScreen === "courses" && <Courses searchText= {searchText} />}
           {activeScreen === "reports" && <Reports searchText= {searchText} />}
+          {activeScreen === "revenue" && <Revenue searchText= {searchText} />}
         </View>
         
       </View>
@@ -322,7 +331,7 @@ console.log("Admin: incoming searchText:", JSON.stringify(searchText));
       //backgroundColor: 'black',
     },
     navButton: {
-      width: '33%',
+      width: '25%',
       // padding: height * 0.01,
       //borderRadius: 8,
       alignItems: 'center',
